@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>dramreads | Stay for the drama</title>
+<meta name="description" content="dramreads is a fiction publishing agency supplying vetted, edited webnovels to reading platforms under exclusive licence or bulk buyout.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@600&family=Gloock&family=Onest:wght@400;500;600;700;800;900&display=swap">
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body data-page="home">
+<main>
+  <section class="hero grain">
+    <div class="wrap">
+      <div class="hero-copy">
+        <h1><span class="brand">dramreads</span>Stay for the <span class="fade">drama.</span></h1>
+        <p class="lede">We are a publishing agency with an established editorial sector, working closely with dedicated writers to deliver vetted, high-retention fiction to digital reading platforms worldwide.</p>
+        <div class="actions">
+          <a class="btn" href="contact.html">Partner With Us</a>
+          <a class="link" href="catalog.html">Browse the catalog</a>
+        </div>
+        <ul class="proof">
+          <li><b>Long &amp; short form</b>Serials and quick reads</li>
+          <li><b>Buyout or licence</b>Bulk, exclusive deals</li>
+          <li><b>Edited in-house</b>Before you see a page</li>
+        </ul>
+      </div>
+      <div class="stage" aria-label="Sample titles. Pick a book to read its opening.">
+        <span class="hint" aria-hidden="true">tap a cover</span>
+        <div class="fan" id="fan"></div>
+        <div class="locked" id="heroLock" aria-live="polite"></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="ticker" aria-hidden="true"><div class="track" id="ticker"></div></div>
+
+  <section class="featured">
+    <div class="wrap">
+      <div class="split-head">
+        <div><span class="kicker">on the desk this month</span><h2>Market-ready, edited, waiting for a platform.</h2></div>
+        <p class="lede">Every title here has cleared our editors. Let the desk cycle through them, or tap any spine to pull it out.</p>
+      </div>
+      <div class="deskshow" id="deskshow" aria-roledescription="carousel" aria-label="Titles on the desk">
+        <div class="ds-bar" aria-hidden="true"><i></i></div>
+        <div class="ds-ctrl">
+          <span class="n" id="dsCount" aria-live="off"></span>
+          <button type="button" id="dsPrev" aria-label="Previous title"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M10 3L5 8l5 5"/></svg></button>
+          <div class="ds-dots" id="dsDots" role="group" aria-label="Choose a title"></div>
+          <button type="button" id="dsPlay" aria-label="Pause"></button>
+          <button type="button" id="dsNext" aria-label="Next title"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 3l5 5-5 5"/></svg></button>
+        </div>
+        <div class="tabletop" aria-hidden="true"></div>
+        <div class="piles" id="dsPiles"></div>
+        <div class="ov" id="dsOv"></div>
+      </div>
+      <div class="foot-link"><a class="btn dark" href="catalog.html">See the full catalog</a><a class="link" href="catalog.html?lead=m">Male lead titles</a></div>
+    </div>
+  </section>
+
+  <section class="line grain">
+    <div class="wrap">
+      <div class="side">
+        <span class="kicker">why readers unlock</span>
+        <p>Our editors plan every chapter to end on a line worth paying for. Here are a few from the catalog.</p>
+      </div>
+      <div>
+        <blockquote><p class="q" id="quote"></p><cite id="quoteCite"></cite></blockquote>
+        <div class="ctrl"><button type="button" id="quoteNext">Another line</button><button type="button" id="quoteOpen" data-open="don">Open this book</button></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap duo">
+      <div class="copy">
+        <span class="kicker">our editorial sector</span>
+        <h2>Every page passes an editor first.</h2>
+        <p class="lede">Our editors work hands-on with our writers from story development through final polish, vetting every manuscript for pacing, emotional hooks, clean prose and market readiness.</p>
+        <div class="cta"><a class="btn dark" href="about.html">How we edit</a></div>
+      </div>
+      <div class="desk" aria-label="Example of an edited manuscript page">
+        <div class="under u1"></div><div class="under u2"></div>
+        <div class="sheet">
+          <div class="meta"><span>Signed, Sealed, His</span><span>Ch. 3, second pass</span></div>
+          <div class="ms">
+            <p>Ava read the contract <del>very slowly and very carefully</del> <ins>twice.</ins> Twelve months. Separate bedrooms. A public kiss at every charity gala, and not one in private.</p>
+            <p>She signed the last page. Damien didn't look at the signature. He looked at her hand, at the <span class="circle">ring</span> that had belonged to his mother.</p>
+            <p>"There's a clause you skipped."</p>
+          </div>
+          <span class="note n1">plant the ring in ch. 1</span>
+          <span class="note n2">end the chapter on his line, not her reaction</span>
+          <span class="stamp">MARKET READY</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="peach-band grain">
+    <div class="wrap">
+      <div class="split-head">
+        <div><span class="kicker">how we partner</span><h2>Two ways to sign. One way to sample.</h2></div>
+        <p class="lede">We structure our publishing partnerships to fit seamlessly into your platform's acquisition workflow.</p>
+      </div>
+      <div class="models">
+        <article class="model"><div class="doc">
+          <svg viewBox="0 0 54 54" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><rect x="8" y="18" width="24" height="30" rx="2"/><path d="M15 13V11a2 2 0 0 1 2-2h18a2 2 0 0 1 2 2v30"/><path d="M22 8V6h20a2 2 0 0 1 2 2v30"/></svg>
+          <h3>Bulk Buyout Submissions</h3>
+          <p>Acquire full rights to multiple market-ready books at once.</p>
+          <div class="sig"><span>full rights, one batch</span></div>
+        </div></article>
+        <article class="model"><div class="doc">
+          <svg viewBox="0 0 54 54" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M12 6h22l10 10v32H12z"/><path d="M34 6v10h10"/><circle cx="27" cy="31" r="6"/><path d="M23 36l-2.5 9 6.5-3.5 6.5 3.5-2.5-9"/></svg>
+          <h3>Bulk Exclusive Licensing</h3>
+          <p>Each title published on your platform under its own exclusive licence.</p>
+          <div class="sig"><span>one title, one clear licence</span></div>
+        </div></article>
+        <article class="model"><div class="doc">
+          <svg viewBox="0 0 54 54" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M8 12h30M8 21h22M8 30h26M8 39h14"/><circle cx="40" cy="38" r="8"/><path d="M40 34v4l3 3"/></svg>
+          <h3>Flexible Sampling &amp; Submissions</h3>
+          <p>Samples, outlines and timelines agreed around your editorial process.</p>
+          <div class="sig"><span>your process, not ours</span></div>
+        </div></article>
+      </div>
+      <div class="foot-link" style="margin-top:40px"><a class="btn dark" href="partner.html">How partnerships work</a></div>
+    </div>
+  </section>
+</main>
+<script src="assets/site.js"></script>
+</body>
+</html>

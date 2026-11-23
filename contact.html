@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Partner With Us | dramreads</title>
+<meta name="description" content="Request samples or discuss bulk submissions with the dramreads partnerships team.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@600&family=Gloock&family=Onest:wght@400;500;600;700;800;900&display=swap">
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body data-page="contact">
+<main>
+  <section class="page-hero grain contact-hero">
+    <div class="wrap">
+      <div>
+        <span class="kicker">let's talk</span>
+        <h1>Start a Publishing Partnership</h1>
+        <p class="lede">Ready to review samples or discuss bulk submissions? Reach out to our editorial and partnerships team directly.</p>
+      </div>
+      <div class="aboutcard mailcard" aria-hidden="true">
+        <div class="ac-glass">
+          <div class="mc-head"><i></i><i></i><i></i><small>New message</small></div>
+          <dl class="mc-meta"><div><dt>To</dt><dd>partnerships@dramreads.com</dd></div><div><dt>Subject</dt><dd>Samples for our romance list</dd></div></dl>
+          <p class="mc-bubble me">Hi dramreads, we'd like to read Signed, Sealed, His in full, and see your mafia titles.</p>
+          <p class="mc-bubble them">Lovely to hear from you. Our editors will send opening chapters and outlines in your format.</p>
+          <p class="mc-typing"><i></i><i></i><i></i></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="contact" id="inquiry">
+    <div class="wrap">
+      <div>
+        <div class="details">
+          <dl>
+            <div><dt>Agency</dt><dd>dramreads Publishing Agency</dd></div>
+            <div><dt>Partnerships &amp; acquisitions</dt><dd><span id="mail">partnerships@dramreads.com</span><button class="copy-btn" type="button" id="copyMail">Copy</button></dd></div>
+            <div><dt>Editorial &amp; licensing</dt><dd>Available for bulk buyouts, exclusive licensing and custom catalog requests</dd></div>
+            <div><dt>Direct business messaging</dt><dd>WhatsApp and LinkedIn handles go here</dd></div>
+          </dl>
+        </div>
+        <div class="next">
+          <h3>What happens next</h3>
+          <ol class="steps" aria-label="After you send the form">
+            <li><b>We read your request</b><span>A partnerships editor reviews your platform and needs.</span></li>
+            <li><b>Samples arrive</b><span>Opening chapters and outlines, in the format you asked for.</span></li>
+            <li><b>We agree terms</b><span>Licence or buyout, title by title or in a batch.</span></li>
+          </ol>
+        </div>
+      </div>
+      <form id="form" novalidate>
+        <div class="f"><label for="company">Platform / company name</label><input id="company" required autocomplete="organization"></div>
+        <div class="f"><label for="role">Your name &amp; role</label><input id="role" required placeholder="e.g. Acquisition Editor"></div>
+        <div class="f"><label for="email">Official work email</label><input id="email" type="email" inputmode="email" required autocomplete="email"></div>
+        <div class="f"><label for="model">Preferred partnership model</label>
+          <select id="model"><option>Bulk Buyout Submissions</option><option>Bulk Exclusive Licensing</option><option selected>Open to Both</option></select></div>
+        <div class="f full"><span id="pickedLabel" style="font-size:14px;font-weight:700;color:var(--deep)">Manuscripts you've requested</span><div class="picked" id="picked" aria-labelledby="pickedLabel"></div><input type="hidden" id="titles"></div>
+        <fieldset class="f full"><legend>Formats &amp; genres of interest</legend>
+          <div class="checks">
+            <label><input type="checkbox" id="c1">Long-Form</label>
+            <label><input type="checkbox" id="c2">Short-Form</label>
+            <label><input type="checkbox" id="c3">Core Romance Tropes</label>
+            <label><input type="checkbox" id="c4">Male Lead Genres</label>
+            <label><input type="checkbox" id="c5">Upcoming Christmas Titles</label>
+          </div>
+        </fieldset>
+        <div class="f full"><label for="msg">Sampling requirements &amp; message</label><textarea id="msg" placeholder="Tell us about your submission guidelines, word count targets, or sample chapter preferences"></textarea></div>
+        <div class="f full submit"><button class="btn" type="submit">Request Samples &amp; Connect</button></div>
+        <p class="sent" id="sent" role="status" hidden></p>
+      </form>
+    </div>
+  </section>
+</main>
+<script src="assets/site.js"></script>
+</body>
+</html>
