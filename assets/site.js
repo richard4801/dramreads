@@ -74,7 +74,7 @@ document.body.insertAdjacentHTML("beforeend", `
       <div class="row"><a class="btn" href="contact.html">Partner With Us</a><span>${MAIL}</span></div></div>`}
     <div class="wrap">
       <div class="foot"><div><a class="logo" href="home.html">dram<i>reads</i></a><p>Stay for the drama.</p></div>
-        <ul><li><a href="about.html">About Us</a></li><li><a href="catalog.html">Genres &amp; Catalog</a></li><li><a href="partner.html">How We Partner</a></li><li><a href="contact.html">Partnership Inquiry</a></li><li><a href="outliners.html">Outline for Us</a></li></ul></div>
+        <ul><li><a href="about.html">About Us</a></li><li><a href="catalog.html">Genres &amp; Catalog</a></li><li><a href="partner.html">How We Partner</a></li><li><a href="contact.html">Partnership Inquiry</a></li><li><a href="outliners.html">Outline for Us</a></li><li><a href="portal.html">Outliner portal</a></li></ul></div>
       <div class="base"><span>Direct Partnerships: ${MAIL}</span><span>© 2026 dramreads. All Rights Reserved.</span></div>
     </div>
   </footer>`);

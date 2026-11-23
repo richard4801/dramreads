@@ -3,82 +3,23 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Outliner Desk preview | dramreads</title>
 <meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#2B1E1C">
+<title>dramreads desk demo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@600&family=Gloock&family=Onest:wght@400;500;600;700;800;900&display=swap">
-<link rel="stylesheet" href="assets/site.css">
-<link rel="stylesheet" href="assets/admin.css">
+<link rel="stylesheet" href="assets/desk/desk.css">
 </head>
-<body class="adm">
+<body class="dk">
+<div id="root"></div>
 <script type="module">
-// Runs the real dashboard (site/admin.html + admin.js) against sample data in memory, no Supabase needed.
-// Open admin-preview.html from the site folder. Nothing is saved.
-const ME = "you@dramreads.test";
-const uuid = () => crypto.randomUUID();
-const ago = d => new Date(Date.now() - d * 864e5).toISOString();
-const A = (name, email, days, status, extra = {}) => ({ id: uuid(), created_at: ago(days), name, email, book_link: "https://www.goodnovel.com/book/sample", genres: ["Contract Marriage", "Mafia & Biker"], message: null,
-  blurb: "She signed the contract to save her father's company. He signed it to destroy hers.", story_outline: "Act one: the wedding is a business deal...\nAct two: the deal starts to cost them both...\nAct three: the betrayal, the choice, the real vow.",
-  characters: "Ivy Hart, 24: proud, broke, sharper than anyone expects.\nDante Moretti, 31: heir to a shipping empire with a debt to settle.", chapter_1: "Ivy walks into the wrong boardroom and the wrong man offers her a ring.",
-  chapter_2: "The prenup has one clause she can't read.", chapter_3: "Their first public kiss is staged; her reaction isn't.", file_path: null, human_declared: true, status, rate: null, prior_ban: false, ...extra });
-const db = {
-  admins: [{ email: ME }],
-  applications: [
-    A("Ama Okafor", "ama@example.com", 0, "new"),
-    A("Lena Brooks", "lena@example.com", 1, "new", { file_path: "x/assessment.pdf", blurb: null, story_outline: null, characters: null, chapter_1: null, chapter_2: null, chapter_3: null, genres: ["Sports Romance"] }),
-    A("R. Vale", "rvale@example.com", 2, "new", { prior_ban: true }),
-    A("Tobi Adeyemi", "tobi@example.com", 6, "review"),
-    A("Grace Lin", "grace@example.com", 30, "accepted", { rate: 2.5 }),
-    A("Marcus Reed", "marcus@example.com", 40, "accepted", { rate: 0.75 }),
-    A("Rachel Vale", "rachel@example.com", 50, "banned"),
-  ],
-  scores: [], batches: [],
-};
-const [, , , tobi, grace, marcus] = db.applications;
-db.scores.push({ application_id: tobi.id, reviewer: "partner@dramreads.test", no_ai: 5, originality: 4, creativity: 4, market_fit: 5, storyline: 4, note: "Strong hooks, chapter 3 drags." });
-db.batches.push({ id: uuid(), application_id: grace.id, month: "2026-10-01", submitted: 120, approved: 110, paid: false },
-  { id: uuid(), application_id: grace.id, month: "2026-09-01", submitted: 90, approved: 80, paid: true },
-  { id: uuid(), application_id: marcus.id, month: "2026-10-01", submitted: 60, approved: 52, paid: false });
-
-// Just enough of the supabase-js query builder for admin.js.
-function from(table) {
-  let rows = db[table], op = "select", payload, filters = [], single = false, conflict;
-  const q = {
-    select() { return q; }, order() { return q; },
-    eq(k, v) { filters.push(r => r[k] === v); return q; },
-    single() { single = true; return q; },
-    insert(r) { op = "insert"; payload = r; return q; },
-    update(r) { op = "update"; payload = r; return q; },
-    upsert(r, o) { op = "upsert"; payload = r; conflict = o.onConflict.split(","); return q; },
-    then(ok, bad) { return Promise.resolve(run()).then(ok, bad); },
-  };
-  function run() {
-    const match = r => filters.every(f => f(r));
-    if (op === "select") return { data: rows.filter(match), error: null };
-    if (op === "update") { rows.filter(match).forEach(r => Object.assign(r, payload)); return { error: null }; }
-    if (op === "insert") {
-      if (table === "batches" && rows.some(r => r.application_id === payload.application_id && r.month === payload.month)) return { data: null, error: { code: "23505", message: "duplicate key" } };
-      const row = { id: uuid(), paid: false, ...payload }; rows.push(row); return { data: single ? row : [row], error: null };
-    }
-    const row = { reviewer: ME, ...payload }, old = rows.find(r => conflict.every(k => r[k] === row[k]));
-    old ? Object.assign(old, row) : rows.push(row); return { error: null };
-  }
-  return q;
-}
-window.DR_SUPABASE = { url: "preview", anonKey: "preview" };
-window.supabase = { createClient: () => ({
-  from,
-  auth: {
-    getSession: async () => ({ data: { session: null } }),
-    signInWithPassword: async ({ email }) => ({ data: { session: { user: { email: email || ME } } }, error: null }),
-    signOut: async () => ({}),
-  },
-  storage: { from: () => ({ createSignedUrl: async () => ({ data: { signedUrl: "data:text/plain,Sample assessment document" }, error: null }) }) },
-}) };
-
-const html = await (await fetch("admin.html")).text();
-document.body.innerHTML = new DOMParser().parseFromString(html, "text/html").body.innerHTML.replace(/<script[\s\S]*?<\/script>/g, "");
-document.querySelector("#lEmail").value = ME;
-await import("./assets/admin.js");
+// The real desk running on sample data (assets/desk/mock.js). Nothing is saved.
+import { install } from "./assets/desk/mock.js";
+install("admin");
+await import("./assets/desk/app.js");
+const email = document.querySelector("#lEmail");
+if (email) { email.value = "you@dramreads.test"; document.querySelector("#lPass").value = "demo"; }
 </script>
 </body>
 </html>

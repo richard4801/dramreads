@@ -4,56 +4,17 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
-<title>Outliner Desk | dramreads</title>
+<meta name="theme-color" content="#2B1E1C">
+<title>dramreads desk</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@600&family=Gloock&family=Onest:wght@400;500;600;700;800;900&display=swap">
-<link rel="stylesheet" href="assets/site.css">
-<link rel="stylesheet" href="assets/admin.css">
+<link rel="stylesheet" href="assets/desk/desk.css">
 </head>
-<body class="adm">
-<header class="adm-bar">
-  <a class="logo" href="home.html">dram<i>reads</i></a>
-  <span class="adm-title">Outliner desk</span>
-  <nav class="adm-tabs" id="tabs" hidden aria-label="Dashboard">
-    <button type="button" data-tab="apps" aria-pressed="true">Applications</button>
-    <button type="button" data-tab="pay" aria-pressed="false">Outliners &amp; pay</button>
-  </nav>
-  <span class="adm-me" id="me"></span>
-  <button type="button" class="adm-link" id="signOut" hidden>Sign out</button>
-</header>
-
-<main class="adm-main">
-  <p class="adm-notice" id="notice" role="status" hidden></p>
-
-  <form class="adm-login" id="login" hidden>
-    <h1>Sign in to the outliner desk</h1>
-    <p>For the dramreads team only.</p>
-    <div class="f"><label for="lEmail">Email</label><input id="lEmail" type="email" autocomplete="username" required></div>
-    <div class="f"><label for="lPass">Password</label><input id="lPass" type="password" autocomplete="current-password" required></div>
-    <button class="btn" type="submit">Sign in</button>
-    <p class="adm-err" id="loginErr" role="alert"></p>
-  </form>
-
-  <section id="apps" class="adm-apps" hidden>
-    <div class="adm-list">
-      <div class="adm-filters">
-        <div class="adm-seg" id="statusFilter" role="group" aria-label="Status"></div>
-        <input type="search" id="search" placeholder="Search name, email or genre" aria-label="Search applications">
-        <button type="button" class="adm-link" id="refresh">Refresh</button>
-      </div>
-      <ol id="appList" class="adm-rows"></ol>
-    </div>
-    <article id="detail" class="adm-detail" aria-live="polite"></article>
-  </section>
-
-  <section id="pay" class="adm-pay" hidden>
-    <div id="due" class="adm-due"></div>
-    <div id="outliners"></div>
-  </section>
-</main>
+<body class="dk">
+<div id="root"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="assets/config.js"></script>
-<script type="module" src="assets/admin.js"></script>
+<script type="module" src="assets/desk/app.js"></script>
 </body>
 </html>
