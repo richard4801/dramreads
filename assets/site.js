@@ -38,7 +38,7 @@ const QUOTES = [
   { id: "clause", q: "Then her ex walked in, saw him, and went completely white." },
   { id: "winter", q: "By midnight, the people who had killed him were on his list." }
 ];
-const PAGES = [["home.html", "Home"], ["about.html", "About Us"], ["catalog.html", "Catalog"], ["partner.html", "How We Partner"]];
+const PAGES = [["home.html", "Home"], ["about.html", "About Us"], ["catalog.html", "Catalog"], ["partner.html", "How We Partner"], ["outliners.html", "Outline for Us"]];
 const MAIL = "partnerships@dramreads.com";
 
 const $ = (s, el = document) => el.querySelector(s);
@@ -52,7 +52,7 @@ document.body.insertAdjacentHTML("afterbegin", `
   <header class="hdr" id="hdr">
     <a class="logo" href="home.html" aria-label="dramreads home">dram<i>reads</i></a>
     <nav aria-label="Main">${navLinks}</nav>
-    <a class="btn" href="contact.html">Partner With Us</a>
+    ${page === "outliners" ? '<a class="btn" href="#apply">Apply to outline</a>' : '<a class="btn" href="contact.html">Partner With Us</a>'}
     <button class="menu-btn" id="menuBtn" aria-expanded="false" aria-controls="panel" aria-label="Open menu"><span></span></button>
   </header>
   <div class="panel" id="panel">${navLinks}<a href="contact.html"${page === "contact" ? ' aria-current="page"' : ""}>Partnership Inquiry</a><p class="mail">${MAIL}</p></div>`);
@@ -67,14 +67,14 @@ const TABS = [
   ["about", "About", '<circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.5M12 7.6v.4"/>']
 ];
 document.body.insertAdjacentHTML("beforeend", `<nav class="tabbar" aria-label="Sections">${TABS.map(([key, label, icon, kind]) =>
-  `<a href="${key}.html"${kind ? ` class="${kind}"` : ""}${page === key ? ' aria-current="page"' : ""}><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${icon}</svg></span>${label}</a>`).join("")}</nav>`);
+  `<a href="${kind && page === "outliners" ? "#apply" : key + ".html"}"${kind ? ` class="${kind}"` : ""}${page === key ? ' aria-current="page"' : ""}><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${icon}</svg></span>${kind && page === "outliners" ? "Apply" : label}</a>`).join("")}</nav>`);
 document.body.insertAdjacentHTML("beforeend", `
   <footer>
-    ${page === "contact" ? "" : `<div class="wrap end"><span class="ch">end of chapter</span><h2>The next one is yours to sign.</h2>
+    ${page === "contact" || page === "outliners" ? "" : `<div class="wrap end"><span class="ch">end of chapter</span><h2>The next one is yours to sign.</h2>
       <div class="row"><a class="btn" href="contact.html">Partner With Us</a><span>${MAIL}</span></div></div>`}
     <div class="wrap">
       <div class="foot"><div><a class="logo" href="home.html">dram<i>reads</i></a><p>Stay for the drama.</p></div>
-        <ul><li><a href="about.html">About Us</a></li><li><a href="catalog.html">Genres &amp; Catalog</a></li><li><a href="partner.html">How We Partner</a></li><li><a href="contact.html">Partnership Inquiry</a></li></ul></div>
+        <ul><li><a href="about.html">About Us</a></li><li><a href="catalog.html">Genres &amp; Catalog</a></li><li><a href="partner.html">How We Partner</a></li><li><a href="contact.html">Partnership Inquiry</a></li><li><a href="outliners.html">Outline for Us</a></li></ul></div>
       <div class="base"><span>Direct Partnerships: ${MAIL}</span><span>© 2026 dramreads. All Rights Reserved.</span></div>
     </div>
   </footer>`);
@@ -348,6 +348,49 @@ document.addEventListener("click", e => {
   }
 });
 
+// ---------- Outliner application ----------
+// Saves to Supabase when assets/config.js has a project; otherwise the page stays a preview.
+const apply = $("#applyForm");
+if (apply) apply.addEventListener("submit", async e => {
+  e.preventDefault();
+  const sent = $("#aSent"), btn = apply.querySelector('[type="submit"]'), v = id => $("#" + id).value.trim();
+  const say = (msg, el) => { sent.hidden = false; sent.textContent = msg; el?.focus(); };
+  const bad = ["aName", "aEmail", "aLink"].map(id => $("#" + id)).find(el => !el.value.trim() || !el.checkValidity());
+  if (bad) return say({ aName: "Add your name or pen name.", aEmail: "Check your email: it needs an @ and a domain.", aLink: "Add the full link to your book, starting with https://." }[bad.id], bad);
+  const parts = [...apply.querySelectorAll("[data-part]")], file = $("#aFile").files[0];
+  const empty = parts.find(t => !t.value.trim());
+  if (!file && empty) return say(`Add your ${empty.labels[0].textContent.toLowerCase()}, or attach your assessment as one document.`, empty);
+  if (file && file.size > 10485760) return say("That document is over 10 MB. Attach a smaller file or paste the parts instead.", $("#aFile"));
+  if (!$("#aHuman").checked) return say("Tick the human-written declaration to apply.", $("#aHuman"));
+  if (v("aWebsite")) return say("Thanks. Your application is in."); // honeypot: bots fill hidden fields
+
+  const cfg = window.DR_SUPABASE;
+  if (!cfg?.url || !window.supabase) return say("This is a preview, so nothing was sent yet. DM us to apply while applications open here.");
+  const db = window.supabase.createClient(cfg.url, cfg.anonKey);
+  btn.disabled = true; say("Sending your application…");
+  try {
+    let file_path = null;
+    if (file) {
+      file_path = `${crypto.randomUUID()}/${file.name.replace(/[^\w.-]+/g, "_").slice(-80)}`;
+      const up = await db.storage.from("assessments").upload(file_path, file, { contentType: file.type || "application/octet-stream" });
+      if (up.error) throw up.error;
+    }
+    const text = id => v(id) || null;
+    const { error } = await db.from("applications").insert({
+      name: v("aName"), email: v("aEmail"), book_link: v("aLink"),
+      genres: [...apply.querySelectorAll(".checks input:checked")].map(c => c.parentElement.textContent.trim()),
+      message: text("aMsg"), blurb: text("aBlurb"), story_outline: text("aOutline"), characters: text("aChars"),
+      chapter_1: text("aCh1"), chapter_2: text("aCh2"), chapter_3: text("aCh3"), file_path, human_declared: true
+    });
+    if (error) throw error;
+    apply.reset();
+    say("Your application is in. Our editors read every assessment and reply by email.");
+  } catch (err) {
+    console.error(err);
+    say("Your application didn't send. Check your connection and try again; nothing you typed was lost.");
+  } finally { btn.disabled = false; }
+});
+
 // ---------- Contact form ----------
 const form = $("#form");
 if (form) {
@@ -391,7 +434,7 @@ if (form) {
 
   // Text and sections fade in gently as they arrive (opacity only, no movement), with a short stagger between siblings.
   const SEL = [".hero-copy > *", ".page-hero .wrap > div > *", ".split-head", ".duo .copy > *", ".desk", ".models .model", ".steps li", ".faq details", ".formats > div", ".toc li",
-    ".rights", ".contact .details", ".next", ".contact form", ".write > div", ".foot-link", ".line .side", ".line blockquote", ".end h2", ".deskshow"].join(",");
+    ".rights", ".contact .details", ".next", ".contact form", ".policy-head > *", ".policy-list li", ".write > div", ".foot-link", ".line .side", ".line blockquote", ".end h2", ".deskshow"].join(",");
   const io = new IntersectionObserver(es => es.forEach(en => { if (en.isIntersecting) { en.target.classList.add("in"); io.unobserve(en.target); } }),
     { rootMargin: "0px 0px -8% 0px", threshold: .1 });
   document.querySelectorAll(SEL).forEach(el => {
