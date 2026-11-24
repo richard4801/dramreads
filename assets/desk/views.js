@@ -465,19 +465,23 @@ function payroll_(el, ctx) {
 // ============ Team ============
 // Invitation = add the email to admins, then email them a one-time sign-in link to the desk.
 function team(el, ctx) {
-  const people = [...S.admins].sort((a, b) => (a.email === ctx.me ? -1 : b.email === ctx.me ? 1 : a.added_at.localeCompare(b.added_at)));
+  // Owner first, then by date added. Only the owner invites or removes (the database enforces it too).
+  const people = [...S.admins].sort((a, b) => (b.owner - a.owner) || a.added_at.localeCompare(b.added_at));
+  const owner = people.find(a => a.owner), iOwn = owner?.email === ctx.me;
   el.innerHTML = `${head("Team", "Everyone who can sign in to the desk.")}
     <div class="grid-2">
       <section class="card"><header><h2>Desk members</h2><span class="count">${people.length}</span></header>
-        <ul class="todo">${people.map(a => `<li><div class="member">${face(a.email.split("@")[0])}<span class="what"><b>${esc(a.email)}</b><small>${a.email === ctx.me ? "You" : `added ${since(a.added_at)}`}</small></span>
-          ${a.email === ctx.me ? "" : `<button type="button" class="dk-btn ghost sm" data-rm="${esc(a.email)}">Remove</button>`}</div></li>`).join("")}</ul></section>
-      <section class="card"><header><h2>Invite a partner</h2></header>
+        <ul class="todo">${people.map(a => `<li><div class="member">${face(a.email.split("@")[0])}<span class="what"><b>${esc(a.email)}</b><small>${[a.email === ctx.me && "You", a.owner ? "Owner" : `added ${since(a.added_at)}`].filter(Boolean).join(" · ")}</small></span>
+          ${a.owner ? pill("owner", "Owner") : iOwn ? `<button type="button" class="dk-btn ghost sm" data-rm="${esc(a.email)}">Remove</button>` : ""}</div></li>`).join("")}</ul></section>
+      ${iOwn ? `<section class="card"><header><h2>Invite a partner</h2></header>
         <form id="invite" class="dk-form pad" novalidate style="padding-top:16px">
           <div class="fld full"><label for="invEmail">Their email</label><input id="invEmail" type="email" autocomplete="off" required placeholder="name@example.com"></div>
           <div class="fld full"><button class="dk-btn" style="justify-self:start">Send invitation</button></div>
-          <p class="small muted" style="grid-column:1/-1;margin:0">They get an email with a link to create their password, then sign in with email and password. They can see and change everything you can.</p>
-        </form></section>
+          <p class="small muted" style="grid-column:1/-1;margin:0">They get an email with a link to create their password. They can do all the day-to-day work, but only you can invite or remove people.</p>
+        </form></section>`
+      : `<section class="card"><header><h2>Invitations</h2></header><p class="pad" style="padding-top:14px;margin:0">Only the owner${owner ? `, ${esc(owner.email)},` : ""} can invite or remove people from the desk.</p></section>`}
     </div>`;
+  if (!iOwn) return;
   $("#invite", el).onsubmit = async e => {
     e.preventDefault();
     const input = $("#invEmail", el), email = input.value.trim().toLowerCase();

@@ -54,6 +54,7 @@ button { font: inherit; color: inherit; }
 .pill.accepted, .pill.approved, .pill.signed, .pill.active, .pill.paid { background: var(--sage-bg); color: var(--sage); }
 .pill.rejected, .pill.declined, .pill.paused, .pill.returned { background: var(--line-2); color: var(--ink-3); }
 .pill.banned, .pill.flag { background: var(--walnut); color: var(--white); }
+.pill.owner { background: var(--peach-2); color: var(--coral-ink); }
 .pill.owed { background: var(--peach-2); color: var(--coral-ink); }
 .avatar { display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--peach-2); color: var(--coral-ink); font: 700 10.5px/1 var(--sans); flex: none; }
 .avatar.lg { width: 40px; height: 40px; font-size: 13px; }
