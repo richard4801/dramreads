@@ -10,7 +10,9 @@ const today = () => new Date().toISOString().slice(0, 10);
 const outliners = () => S.applications.filter(a => a.status === "accepted");
 const nameOf = (table, id) => byId(table, id)?.name ?? "";
 const face = (name, cls = "") => `<span class="avatar ${cls}" title="${esc(name)}">${esc(initials(name))}</span>`;
-const pill = (cls, label) => `<span class="pill ${cls}">${esc(label)}</span>`;
+const pill = (cls, label) => `<span class="pill ${cls}">${esc(label[0].toUpperCase() + label.slice(1))}</span>`;
+const whole = n => `$${Math.round(n).toLocaleString("en")}`; // headline figures; exact cents live in Payroll
+const since = d => { const n = Math.floor((Date.now() - Date.parse(d)) / 864e5); return n < 1 ? "today" : n === 1 ? "yesterday" : n < 30 ? `${n}d ago` : day(d); };
 const head = (title, sub, actions = "") => `<header class="page-head"><div><h1>${esc(title)}</h1>${sub ? `<p>${sub}</p>` : ""}</div><div class="actions">${actions}</div></header>`;
 const empty = (title, body) => `<div class="empty"><b>${esc(title)}</b>${esc(body)}</div>`;
 const fail = err => { console.error(err); toast(explain(err), true); };
@@ -40,24 +42,25 @@ function overview(el, ctx) {
 
   const todo = [
     ...S.applications.filter(a => a.status === "new" && !S.scores.some(s => s.application_id === a.id && s.reviewer === ctx.me))
-      .map(a => [`#/applications/${a.id}`, a.prior_ban ? "dark" : "amber", `Score ${a.name}'s assessment`, day(a.created_at)]),
+      .map(a => [`#/applications/${a.id}`, "Score", a.prior_ban ? `${a.name} (banned before)` : a.name, `applied ${since(a.created_at)}`]),
     ...S.batches.filter(b => b.status === "submitted")
-      .map(b => [`#/outliners/batch/${b.id}`, "", `Approve ${nameOf("applications", b.application_id)}'s ${monthLabel(b.month)} batch`, plural(b.submitted, "outline")]),
+      .map(b => [`#/outliners/batch/${b.id}`, "Approve", `${nameOf("applications", b.application_id)} · ${monthLabel(b.month).split(" ")[0]} batch`, plural(b.submitted, "outline")]),
     ...active.filter(s => daysUntil(s.due_on) < 0)
-      .map(s => [`#/stories/${s.id}`, "dark", `${s.title} is past due`, `${-daysUntil(s.due_on)}d late`]),
+      .map(s => [`#/stories/${s.id}`, "Late", s.title, `${-daysUntil(s.due_on)}d past due`]),
     ...open.filter(d => (Date.now() - Date.parse(d.created_at)) / 864e5 > 14)
-      .map(d => [`#/deals/${d.id}`, "sky", `Follow up ${nameOf("platforms", d.platform_id)} on ${byId("stories", d.story_id)?.title ?? "a story"}`, `pitched ${day(d.created_at)}`]),
+      .map(d => [`#/deals/${d.id}`, "Chase", `${nameOf("platforms", d.platform_id)} · ${byId("stories", d.story_id)?.title ?? "a story"}`, `pitched ${since(d.created_at)}`]),
   ];
+  const waiting = S.batches.filter(b => b.status === "submitted").reduce((n, b) => n + b.submitted, 0);
 
   el.innerHTML = `
     ${head(`Good ${new Date().getHours() < 12 ? "morning" : new Date().getHours() < 18 ? "afternoon" : "evening"}`, new Date().toLocaleDateString("en", { weekday: "long", day: "numeric", month: "long" }),
       `<a class="dk-btn ghost" href="#/stories/new">${ICON.plus} New story</a><a class="dk-btn" href="#/deals/new">${ICON.plus} New deal</a>`)}
     <nav class="ledger" aria-label="At a glance">
       <a href="#/applications" class="${c.applications ? "hot" : ""}"><b>${c.applications}</b><span>New applications</span><small>${S.applications.filter(a => a.status === "review").length} under review</small></a>
-      <a href="#/outliners" class="${c.outliners ? "hot" : ""}"><b>${c.outliners}</b><span>Batches to approve</span><small>${approvedThisMonth} outlines approved this month</small></a>
+      <a href="#/outliners" class="${c.outliners ? "hot" : ""}"><b>${c.outliners}</b><span>Batches to approve</span><small>${waiting ? `${waiting} outlines waiting` : `${approvedThisMonth} approved this month`}</small></a>
       <a href="#/stories"><b>${active.length}</b><span>Stories in progress</span><small>${c.stories ? `${c.stories} past due` : "none past due"}</small></a>
-      <a href="#/deals"><b>${money(signed.reduce((n, d) => n + Number(d.value || 0), 0)).replace(".00", "")}</b><span>Signed deal value</span><small>${plural(open.length, "deal")} in talks</small></a>
-      <a href="#/payroll"><b>${money(next?.owed || 0).replace(".00", "")}</b><span>Owed next payday</span><small>${next ? next.label : "nothing owed"}</small></a>
+      <a href="#/deals"><b>${whole(signed.reduce((n, d) => n + Number(d.value || 0), 0))}</b><span>Signed deal value</span><small>${plural(open.length, "deal")} in talks</small></a>
+      <a href="#/payroll"><b>${whole(next?.owed || 0)}</b><span>Owed next payday</span><small>${next ? `${next.label.replace(/, \d{4}$/, "")} · ${plural(next.lines.filter(l => !l.paid).length, "person", "people")}` : "nothing owed"}</small></a>
     </nav>
     <div class="grid-2">
       <div class="stack">
@@ -69,9 +72,8 @@ function overview(el, ctx) {
       ${leaderboard()}
       </div>
       <div class="stack">
-        ${next ? `<a class="payday" href="#/payroll"><small>Next payday</small><b>${money(next.owed)}</b><span>${next.label} · ${plural(next.lines.filter(l => !l.paid).length, "payment")}</span></a>` : ""}
-        <section class="card"><header><h2>Needs you</h2><span class="muted small">${todo.length || ""}</span></header>
-          ${todo.length ? `<ul class="todo">${todo.slice(0, 8).map(([href, dot, label, meta]) => `<li><a href="${href}"><i class="dot ${dot}"></i><span>${esc(label)}</span><small>${esc(meta)}</small></a></li>`).join("")}</ul>` : empty("All clear", "Nothing is waiting on you right now.")}
+        <section class="card"><header><h2>Needs you</h2>${todo.length ? `<span class="count">${todo.length}</span>` : ""}</header>
+          ${todo.length ? `<ul class="todo">${todo.slice(0, 9).map(([href, tag, label, meta]) => `<li><a href="${href}"><span class="tag t-${tag.toLowerCase()}">${tag}</span><span class="what"><b>${esc(label)}</b><small>${esc(meta)}</small></span><i aria-hidden="true">›</i></a></li>`).join("")}</ul>` : empty("All clear", "Nothing is waiting on you right now.")}
         </section>
       </div>
     </div>`;
@@ -86,7 +88,7 @@ function leaderboard() {
   }).sort((a, b) => b.approved - a.approved);
   const top = Math.max(1, ...rows.map(r => r.approved));
   return `<section class="card"><header><h2>Outliners in ${monthLabel(m).split(" ")[0]}</h2><a class="small" href="#/outliners">All outliners</a></header>
-    ${rows.length ? `<div class="pad"><table class="tbl"><thead><tr><th>Outliner</th><th>Approved outlines</th><th class="r">Approval</th></tr></thead><tbody>
+    ${rows.length ? `<div class="pad"><table class="tbl lead"><thead><tr><th>Outliner</th><th>Approved outlines</th><th class="r">Approval</th></tr></thead><tbody>
       ${rows.map(r => `<tr class="click" onclick="location.hash='#/outliners/${r.o.id}'"><td><span class="person">${face(r.o.name)}<b>${esc(r.o.name)}</b></span></td>
         <td style="width:45%"><span class="row" style="display:flex;gap:10px;align-items:center"><span class="bar" style="flex:1"><i style="width:${r.approved / top * 100}%"></i></span><b class="num">${r.approved}</b></span></td>
         <td class="r num">${r.rate === null ? "–" : r.rate + "%"}</td></tr>`).join("")}</tbody></table></div>` : empty("No outliners yet", "Accept an application to build the team.")}</section>`;
@@ -103,7 +105,7 @@ function applications(el, ctx, id) {
       const avg = average(S.scores.filter(s => s.application_id === a.id));
       return `<li><button type="button" data-open="${a.id}" aria-current="${a.id === id}">${face(a.name)}
         <span class="who"><b>${esc(a.name)}</b><small>${esc(a.email)} · ${day(a.created_at)}</small></span>
-        <span class="end">${a.prior_ban ? pill("flag", "Banned before") : pill(a.status, APP_STATUS[a.status])}<span class="score">${avg ?? "–"}<small> /25</small></span></span></button></li>`;
+        <span class="end">${a.prior_ban ? pill("flag", "Banned before") : pill(a.status, APP_STATUS[a.status])}${avg === null ? "" : `<span class="score">${avg}<small> /25</small></span>`}</span></button></li>`;
     }).join("") : `<li>${empty("Nothing here", appQuery ? "No application matches that search." : `No ${APP_STATUS[appFilter]?.toLowerCase() ?? ""} applications yet.`)}</li>`;
   };
   const filters = [["new", "New"], ["review", "Reviewing"], ["accepted", "Accepted"], ["rejected", "Rejected"], ["banned", "Banned"], ["all", "All"]];
@@ -121,35 +123,38 @@ function applications(el, ctx, id) {
 function appDetail(el, ctx, a) {
   if (!a) { el.innerHTML = empty("Pick an application", "Read the assessment, score it, then accept, reject or ban."); return; }
   const all = S.scores.filter(s => s.application_id === a.id), mine = all.find(s => s.reviewer === ctx.me) || {}, avg = average(all);
+  const partner = all.find(s => s.reviewer !== ctx.me);
   el.innerHTML = `
     <a class="back" href="#/applications">‹ Applications</a>
-    <div class="detail-head">${face(a.name, "lg")}<div class="meta"><h2>${esc(a.name)}</h2><p><a href="mailto:${esc(a.email)}">${esc(a.email)}</a> · applied ${day(a.created_at)}</p></div>
+    <div class="detail-head">${face(a.name, "lg")}<div class="meta"><h2>${esc(a.name)}</h2><p><a href="mailto:${esc(a.email)}">${esc(a.email)}</a> · applied ${since(a.created_at)}</p></div>
       ${pill(a.status, APP_STATUS[a.status] + (a.status === "accepted" ? ` · ${money(a.rate)}` : ""))}</div>
     ${a.prior_ban ? `<p class="warn">${ICON.flag}This email or name matches an outliner you banned before.</p>` : ""}
+    <div class="decide" role="group" aria-label="Decision">
+      <span class="decide-score">${avg === null ? "Not scored yet" : `<b>${avg}</b> / 25 team score`}</span>
+      <label class="rate-in"><span class="sr">Rate per outline</span><i>$</i><input id="rate" type="number" min="0.5" max="5" step="0.05" value="${a.rate ?? ""}" placeholder="Rate"></label>
+      <button type="button" class="dk-btn" data-set="accepted">Accept</button>
+      <span class="more-acts">
+        <button type="button" class="dk-btn ghost sm" data-set="review">Under review</button>
+        <button type="button" class="dk-btn ghost sm" data-set="rejected">Reject</button>
+        <button type="button" class="dk-btn danger sm" data-set="banned">Ban for AI</button>
+      </span>
+    </div>
     <dl class="facts">
-      <div><dt>Book with 5,000+ views</dt><dd><a href="${esc(a.book_link)}" target="_blank" rel="noopener noreferrer">${esc(a.book_link.replace(/^https?:\/\/(www\.)?/, ""))}</a></dd></div>
+      <div><dt>Book with 5,000+ views</dt><dd class="clip"><a href="${esc(a.book_link)}" target="_blank" rel="noopener noreferrer">${esc(a.book_link.replace(/^https?:\/\/(www\.)?/, ""))}</a></dd></div>
       <div><dt>Genres</dt><dd>${a.genres.length ? a.genres.map(esc).join(", ") : "None picked"}</dd></div>
       <div><dt>Declaration</dt><dd>100% human-written</dd></div>
     </dl>
     ${a.message ? `<p class="muted">“${esc(a.message)}”</p>` : ""}
     <h3 class="sec-title">Assessment ${a.file_path ? `<button type="button" class="dk-btn ghost sm" id="openFile">${ICON.file} Open attached document</button>` : ""}</h3>
     ${PARTS.some(([k]) => a[k]) ? `<div class="manuscript">${PARTS.filter(([k]) => a[k]).map(([k, l]) => `<section><h4>${l}</h4><p>${esc(a[k])}</p></section>`).join("")}</div>` : ""}
-    <h3 class="sec-title">Your score <small>${avg === null ? "Not scored yet" : `Team average ${avg} / 25`}</small></h3>
+    <h3 class="sec-title">Score it <small>${mine.reviewer ? `You: ${total(mine)} / 25` : "1 is weak, 5 is excellent"}</small></h3>
     <form id="scoreForm" class="rubric">
-      ${CRITERIA.map(([k, l]) => `<div class="crit"><fieldset><legend>${l}</legend><div class="dots">${[1, 2, 3, 4, 5].map(n => `<label><input type="radio" name="${k}" value="${n}" required${mine[k] === n ? " checked" : ""}><span>${n}</span></label>`).join("")}</div></fieldset></div>`).join("")}
+      <div class="crit crit-head" aria-hidden="true"><span></span><span>Your score</span>${partner ? `<span>${esc(partner.reviewer.split("@")[0])}</span>` : ""}</div>
+      ${CRITERIA.map(([k, l]) => `<div class="crit"><fieldset><legend>${l}</legend><div class="dots">${[1, 2, 3, 4, 5].map(n => `<label><input type="radio" name="${k}" value="${n}" required${mine[k] === n ? " checked" : ""}><span>${n}</span></label>`).join("")}</div></fieldset>${partner ? `<span class="theirs" title="${esc(partner.reviewer)}">${partner[k]}</span>` : ""}</div>`).join("")}
+      ${partner?.note ? `<p class="partner-note"><b>${esc(partner.reviewer.split("@")[0])}:</b> “${esc(partner.note)}”</p>` : ""}
       <div class="fld"><label for="sNote">Note for your partner</label><textarea id="sNote" rows="2">${esc(mine.note)}</textarea></div>
       <div><button class="dk-btn">${mine.reviewer ? "Update my score" : "Save my score"}</button></div>
-      ${all.filter(s => s.reviewer !== ctx.me).length ? `<div class="others">${all.filter(s => s.reviewer !== ctx.me).map(s => `<p><b>${esc(s.reviewer.split("@")[0])}</b> scored ${total(s)} / 25${s.note ? ` · “${esc(s.note)}”` : ""}</p>`).join("")}</div>` : ""}
-    </form>
-    <h3 class="sec-title">Decision</h3>
-    <div class="decide">
-      <div class="fld"><label for="rate">Rate per outline</label><input id="rate" type="number" min="0.5" max="5" step="0.05" value="${a.rate ?? ""}" placeholder="0.50 – 5.00"></div>
-      <button type="button" class="dk-btn" data-set="accepted">Accept</button>
-      <span class="sep"></span>
-      <button type="button" class="dk-btn ghost" data-set="review">Under review</button>
-      <button type="button" class="dk-btn ghost" data-set="rejected">Reject</button>
-      <button type="button" class="dk-btn danger" data-set="banned">Ban for AI use</button>
-    </div>`;
+    </form>`;
 
   $("#openFile", el)?.addEventListener("click", () => openFile(ctx.db, "assessments", a.file_path).catch(fail));
   $("#scoreForm", el).onsubmit = async e => {

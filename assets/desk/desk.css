@@ -103,7 +103,7 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--coral); 
 .side .me .dk-icon:hover { background: var(--walnut-3); }
 
 .desk > .body { min-width: 0; }
-.main { min-width: 0; padding: 28px clamp(18px, 3vw, 40px) 60px; }
+.main { min-width: 0; max-width: 1400px; padding: 28px clamp(18px, 3vw, 40px) 60px; }
 .page-head { display: flex; align-items: end; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 22px; }
 .page-head h1 { font: 400 clamp(30px, 3.4vw, 42px)/1.05 var(--display); letter-spacing: -.01em; }
 .page-head p { margin: 6px 0 0; color: var(--ink-2); }
@@ -150,11 +150,15 @@ input[type="file"]::file-selector-button { border: 0; border-radius: 999px; back
 .todo { list-style: none; margin: 0; padding: 6px 8px 10px; }
 .todo li a { display: flex; gap: 12px; align-items: center; padding: 11px 12px; border-radius: 12px; text-decoration: none; color: inherit; }
 .todo li a:hover { background: var(--peach); }
-.todo .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--coral); flex: none; }
-.todo .dot.amber { background: var(--amber); } .todo .dot.sky { background: var(--sky); } .todo .dot.dark { background: var(--walnut); }
-.todo span { flex: 1; min-width: 0; } .todo small { color: var(--ink-3); white-space: nowrap; }
-.payday { background: linear-gradient(140deg, var(--coral) 0%, #EE8B78 100%); color: var(--walnut); border-radius: var(--r); padding: 20px 22px; display: grid; gap: 4px; text-decoration: none; }
-.payday small { font-weight: 700; } .payday b { font: 400 42px/1 var(--display); } .payday span { font-size: 13px; }
+/* Each to-do says what kind of job it is, so the list can be scanned by verb. */
+.todo .tag { flex: none; width: 66px; text-align: center; font: 800 11px/1 var(--sans); padding: 6px 0; border-radius: 8px; }
+.t-score { background: var(--amber-bg); color: var(--amber); } .t-approve { background: var(--peach-2); color: var(--coral-ink); }
+.t-late { background: var(--walnut); color: var(--peach); } .t-chase { background: var(--sky-bg); color: var(--sky); }
+.todo .what { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.todo .what b { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.todo .what small { color: var(--ink-3); font-size: 12.5px; }
+.todo li a > i { font-style: normal; color: var(--ink-3); font-size: 20px; line-height: 1; }
+.card > header .count { min-width: 24px; height: 24px; padding: 0 8px; border-radius: 99px; background: var(--walnut); color: var(--peach); font: 800 12px/24px var(--sans); text-align: center; }
 
 /* ---------- Lists & tables ---------- */
 .split { display: grid; grid-template-columns: minmax(300px, 400px) 1fr; gap: 18px; align-items: start; }
@@ -205,9 +209,20 @@ input[type="file"]::file-selector-button { border: 0; border-radius: 999px; back
 .dots input:focus-visible + span { outline: 3px solid var(--coral); outline-offset: 2px; }
 .others { display: grid; gap: 8px; margin-top: 4px; }
 .others p { margin: 0; padding: 10px 12px; border-radius: 12px; background: var(--peach); font-size: 14px; }
-.decide { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; padding: 16px; border-radius: 14px; background: var(--white); box-shadow: 0 0 0 1px var(--line-2); }
-.decide .fld { flex: 0 1 170px; }
-.decide .sep { flex: 1; }
+/* Decision bar: stays in view while you read the assessment. */
+.decide { position: sticky; top: 12px; z-index: 5; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 18px 0 4px; padding: 10px 10px 10px 16px; border-radius: 16px;
+  background: rgba(255,255,255,.92); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); box-shadow: 0 0 0 1px var(--line), 0 12px 24px -18px rgba(90,40,30,.5); }
+.decide-score { font-size: 13px; color: var(--ink-2); margin-right: auto; } .decide-score b { font: 400 22px/1 var(--display); color: var(--ink); }
+.rate-in { position: relative; display: block; width: 104px; }
+.rate-in i { position: absolute; left: 12px; top: 50%; translate: 0 -50%; font-style: normal; font-weight: 700; color: var(--ink-3); }
+.rate-in input { padding-left: 26px !important; padding-block: 9px !important; }
+.more-acts { display: flex; gap: 6px; }
+/* Your score and your partner's, side by side per check */
+.crit { grid-template-columns: 190px 224px 48px; justify-content: start; column-gap: 14px; } /* 224 = five 40px buttons + gaps, so every row lines up */
+.crit-head { font: 700 11.5px/1 var(--sans); color: var(--ink-3); } .crit-head span:last-child { text-align: center; }
+.theirs { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; background: var(--peach); color: var(--coral-ink); font-weight: 800; }
+.partner-note { margin: 4px 0 0; padding: 10px 12px; border-radius: 12px; background: var(--peach); font-size: 14px; }
+.facts dd.clip { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* ---------- People cards ---------- */
 .people { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
@@ -278,7 +293,7 @@ dialog.confirm .row { display: flex; justify-content: flex-end; gap: 10px; }
    Bottom tab bar instead of the sidebar, bottom sheets instead of side drawers,
    one screen at a time (list, then detail; one story stage at a time), tables as card rows. */
 .mobile-bar, .tabbar, .stage-tabs, .back { display: none; }
-@media (max-width: 1100px) { .ledger { grid-template-columns: repeat(3, 1fr); } .ledger a:nth-child(4) { border-left: 0; } .ledger a:nth-child(n+4) { border-top: 1px solid rgba(253,236,230,.1); } .grid-2 { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 1100px) { .ledger { grid-template-columns: repeat(3, 1fr); } .ledger a:nth-child(4) { border-left: 0; } .ledger a:nth-child(n+4) { border-top: 1px solid rgba(253,236,230,.1); } .grid-2 { grid-template-columns: minmax(0, 1fr); } .grid-2 > .stack:last-child { order: -1; } }
 @media (max-width: 900px) {
   .desk { display: block; }
   .side { display: none; }
@@ -333,7 +348,15 @@ dialog.confirm .row { display: flex; justify-content: flex-end; gap: 10px; }
   .facts { grid-template-columns: 1fr 1fr; } .facts div:first-child { grid-column: 1 / -1; }
   .manuscript { padding: 4px 16px; }
   .crit { grid-template-columns: 1fr; gap: 6px; } .dots { display: grid; grid-template-columns: repeat(5, 1fr); } .dots span { width: 100%; height: 44px; }
-  .decide { padding: 14px; } .decide .fld { flex: 1 1 100%; } .decide .sep { display: none; } .decide .dk-btn { flex: 1 1 40%; }
+  .decide { position: static; padding: 10px; }
+  .lead .bar, .lead .avatar { display: none; } .lead td { white-space: nowrap; } .lead th, .lead td { padding: 11px 6px; } .lead th { white-space: normal; }
+  .lead td:first-child { overflow: hidden; text-overflow: ellipsis; max-width: 0; width: 55%; } .lead th:nth-child(2) { text-align: right; } .lead td:nth-child(2) .row { justify-content: flex-end; }
+  .decide-score { flex: 1 1 100%; margin: 0 0 2px 4px; }
+  .rate-in { flex: 1; width: auto; } .decide > .dk-btn { flex: 1; }
+  .more-acts { flex: 1 1 100%; border: 0; padding: 0; } .more-acts .dk-btn { flex: 1; padding-inline: 6px; }
+  .crit { grid-template-columns: 1fr 44px; } .crit legend { grid-column: 1 / -1; }
+  .crit-head span:first-child { display: none; }
+  .theirs { width: 44px; height: 44px; }
 
   /* Story board: one stage at a time, picked from scrolling tabs */
   .stage-tabs { display: flex; gap: 8px; overflow-x: auto; margin: 0 -16px 14px; padding: 2px 16px 4px; scroll-snap-type: x proximity; scrollbar-width: none; }
