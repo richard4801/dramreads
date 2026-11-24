@@ -111,8 +111,10 @@ export function install(role) {
     from,
     auth: {
       getSession: async () => ({ data: { session } }),
-      signInWithPassword: async () => (session = { user: { email: user } }, { data: { session }, error: null }),
-      signInWithOtp: async () => { session = { user: { email: user } }; setTimeout(() => listeners.forEach(f => f("SIGNED_IN", session)), 900); return { error: null }; },
+      // Demo: the password signs straight in; the emailed link lands on "Create your password".
+      signInWithPassword: async () => (session = { user: { email: user, user_metadata: { password_set: true } } }, { data: { session }, error: null }),
+      signInWithOtp: async () => { session = { user: { email: user, user_metadata: {} } }; setTimeout(() => listeners.forEach(f => f("SIGNED_IN", session)), 900); return { error: null }; },
+      updateUser: async ({ data }) => { session.user.user_metadata = { ...session.user.user_metadata, ...data }; return { data: { user: session.user }, error: null }; },
       onAuthStateChange: f => listeners.push(f),
       signOut: async () => { session = null; return {}; },
     },
@@ -125,6 +127,6 @@ export function install(role) {
   note.className = "demo-note";
   note.title = "Tap to hide";
   note.onclick = () => note.remove();
-  note.innerHTML = `Demo with sample data. Nothing you change is saved. ${role === "outliner" ? "Press <b>Email me a sign-in link</b> to enter as Grace." : "Press <b>Email me a sign-in link</b> to enter."}`;
+  note.innerHTML = `Demo with sample data. Nothing you change is saved. ${role === "outliner" ? "Enter any password and press <b>Sign in</b> to enter as Grace, or try <b>First time</b> to see the password setup." : "Enter any password and press <b>Sign in</b>, or try <b>First time</b> to see the password setup."}`;
   document.body.append(note);
 }

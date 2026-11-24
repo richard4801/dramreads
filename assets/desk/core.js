@@ -15,6 +15,40 @@ export function connect() {
   return window.supabase.createClient(cfg.url, cfg.anonKey);
 }
 
+// ---------- Passwords ----------
+// Email links are only for first access, invitations and forgotten passwords: they land on
+// "?setpw=1" and must set a password before going in. Everyday sign-in is email + password.
+export const linkBack = () => `${location.origin}${location.pathname}?setpw=1`;
+export const needsPassword = session => new URLSearchParams(location.search).has("setpw") || !session.user.user_metadata?.password_set;
+
+export function passwordScreen(root, db, side) {
+  return new Promise(done => {
+    root.innerHTML = `<div class="gate">${side}
+      <div class="gate-form"><form id="pwForm" novalidate>
+        <h1>Create your password</h1>
+        <p class="muted" style="margin:0">You'll sign in with your email and this password from now on.</p>
+        <div class="fld"><label for="pw1">New password <small>8 characters or more</small></label><input id="pw1" type="password" autocomplete="new-password" minlength="8" required></div>
+        <div class="fld"><label for="pw2">Type it again</label><input id="pw2" type="password" autocomplete="new-password" required></div>
+        <button class="dk-btn">Save password and continue</button>
+        <p class="err" id="pwErr" role="status"></p>
+      </form></div></div>`;
+    const out = $("#pwErr");
+    $("#pw1").focus();
+    $("#pwForm").onsubmit = async e => {
+      e.preventDefault();
+      const a = $("#pw1").value, b = $("#pw2").value;
+      if (a.length < 8) { $("#pw1").focus(); return out.textContent = "Use at least 8 characters."; }
+      if (a !== b) { $("#pw2").focus(); return out.textContent = "The two passwords don't match."; }
+      const btn = e.target.querySelector("button"); btn.disabled = true;
+      const { error } = await db.auth.updateUser({ password: a, data: { password_set: true } });
+      btn.disabled = false;
+      if (error) return out.textContent = explain(error);
+      history.replaceState(null, "", location.pathname + location.hash);
+      done();
+    };
+  });
+}
+
 // ---------- Store: every table the signed-in person can see, kept in memory ----------
 export const TABLES = ["admins", "applications", "scores", "batches", "writers", "writer_logs", "platforms", "stories", "deals"];
 export const S = Object.fromEntries(TABLES.map(t => [t, []]));

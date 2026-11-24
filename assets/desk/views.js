@@ -1,5 +1,5 @@
 // Every screen of the desk. Each view renders into `el` from the in-memory store and saves through core.save.
-import { $, $$, esc, day, initials, plural, S, byId, save, remove, openFile, drawer, closeDrawer, confirmBox, toast, explain, ICON } from "./core.js";
+import { $, $$, esc, day, initials, plural, S, byId, save, remove, openFile, drawer, closeDrawer, confirmBox, toast, explain, ICON, linkBack } from "./core.js";
 import { CRITERIA, total, average, money, payout, monthOf, monthLabel, payWindow, approvalRate, payroll, daysUntil } from "./calc.js";
 
 export const STAGES = [["outline", "Outline"], ["writing", "Writing"], ["editing", "Editing"], ["ready", "Ready to pitch"], ["pitched", "Pitched"], ["signed", "Signed"], ["declined", "Declined"]];
@@ -475,7 +475,7 @@ function team(el, ctx) {
         <form id="invite" class="dk-form pad" novalidate style="padding-top:16px">
           <div class="fld full"><label for="invEmail">Their email</label><input id="invEmail" type="email" autocomplete="off" required placeholder="name@example.com"></div>
           <div class="fld full"><button class="dk-btn" style="justify-self:start">Send invitation</button></div>
-          <p class="small muted" style="grid-column:1/-1;margin:0">They get an email with a one-time sign-in link to the desk. They can see and change everything you can.</p>
+          <p class="small muted" style="grid-column:1/-1;margin:0">They get an email with a link to create their password, then sign in with email and password. They can see and change everything you can.</p>
         </form></section>
     </div>`;
   $("#invite", el).onsubmit = async e => {
@@ -488,7 +488,7 @@ function team(el, ctx) {
       const { data, error } = await ctx.db.from("admins").insert({ email }).select().single();
       if (error) throw error;
       S.admins.push(data);
-      const link = await ctx.db.auth.signInWithOtp({ email, options: { emailRedirectTo: location.origin + location.pathname } });
+      const link = await ctx.db.auth.signInWithOtp({ email, options: { emailRedirectTo: linkBack() } }); // lands on "Create your password"
       toast(link.error ? `${email} added. The email didn't send (${link.error.message}); they can request a sign-in link from the desk.` : `Invitation sent to ${email}.`, !!link.error);
       ctx.rerender();
     } catch (err) { fail(err); } finally { btn.disabled = false; }

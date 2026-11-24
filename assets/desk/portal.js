@@ -1,41 +1,56 @@
-// Outliner portal: sign in with an emailed link, submit a monthly batch, see approvals and pay.
+// Outliner portal: sign in with email and password (an emailed link sets the password), submit a monthly batch, see approvals and pay.
 // The database only shows an outliner their own record and batches, and won't let them approve or price anything.
-import { $, esc, day, connect, toast, explain, ICON, plural } from "./core.js";
+import { $, esc, day, connect, toast, explain, ICON, plural, linkBack, needsPassword, passwordScreen } from "./core.js";
 import { money, payout, monthOf, monthLabel, payWindow, approvalRate } from "./calc.js";
 
 const root = $("#root"), db = connect();
 const STATUS = { submitted: "With our editors", approved: "Approved", returned: "Returned to fix" };
 let me, batches = [];
 
+const SIDE = `<div class="gate-side"><a class="brand" href="outliners.html">dram<i>reads</i><small>outliner portal</small></a>
+  <div><blockquote>Send your outlines. Track every approval.</blockquote><p>For accepted dramreads outliners. Sign in with the email you applied with.</p></div></div>`;
+
 function gate(message = "") {
-  root.innerHTML = `<div class="gate">
-    <div class="gate-side"><a class="brand" href="outliners.html">dram<i>reads</i><small>outliner portal</small></a>
-      <div><blockquote>Send your outlines. Track every approval.</blockquote><p>For accepted dramreads outliners. Sign in with the email you applied with.</p></div></div>
+  root.innerHTML = `<div class="gate">${SIDE}
     <div class="gate-form"><form id="login" novalidate>
       <h1>Sign in</h1>
-      <p class="muted" style="margin:0">We'll email you a link. No password needed.</p>
-      <div class="fld"><label for="lEmail">Email you applied with</label><input id="lEmail" type="email" autocomplete="email" required></div>
-      <button class="dk-btn">Email me a sign-in link</button>
+      <div class="fld"><label for="lEmail">Email you applied with</label><input id="lEmail" type="email" autocomplete="username" required></div>
+      <div class="fld"><label for="lPass">Password</label><input id="lPass" type="password" autocomplete="current-password"></div>
+      <button class="dk-btn" id="signBtn">Sign in</button>
+      <button type="button" class="dk-btn ghost" id="linkBtn">First time, or forgot your password?</button>
       <p class="err" id="loginErr" role="status">${esc(message)}</p>
       <p class="muted small">Not on the team yet? <a href="outliners.html#apply">Apply to outline</a>.</p>
     </form></div></div>`;
+  const out = $("#loginErr"), mail = $("#lEmail"), email = () => mail.value.trim().toLowerCase();
   $("#login").onsubmit = async e => {
     e.preventDefault();
-    const email = $("#lEmail").value.trim(), out = $("#loginErr");
-    if (!$("#lEmail").checkValidity() || !email) return out.textContent = "Enter the email you applied with.";
     if (!db) return;
-    const btn = e.target.querySelector("button"); btn.disabled = true;
-    const { error } = await db.auth.signInWithOtp({ email, options: { emailRedirectTo: location.origin + location.pathname } });
+    if (!mail.checkValidity() || !email()) { mail.focus(); return out.textContent = "Enter the email you applied with."; }
+    if (!$("#lPass").value) { $("#lPass").focus(); return out.textContent = "Enter your password, or use the link below if you haven't set one yet."; }
+    const btn = $("#signBtn"); btn.disabled = true;
+    const { data, error } = await db.auth.signInWithPassword({ email: email(), password: $("#lPass").value });
     btn.disabled = false;
-    out.textContent = error ? explain(error) : `Check ${email} for your sign-in link. It works once, for an hour.`;
+    error ? (out.textContent = "That email and password don't match. First time here? Use the link below to set your password.") : start(data.session);
   };
+  // The emailed link lands on "Create your password", never straight in.
+  $("#linkBtn").onclick = async () => {
+    if (!db) return;
+    if (!mail.checkValidity() || !email()) { mail.focus(); return out.textContent = "Enter the email you applied with first."; }
+    const btn = $("#linkBtn"); btn.disabled = true;
+    const { error } = await db.auth.signInWithOtp({ email: email(), options: { emailRedirectTo: linkBack() } });
+    btn.disabled = false;
+    out.textContent = error ? explain(error) : `Check ${email()} for a link to set your password. It works once, for an hour.`;
+  };
+  mail.focus();
 }
 
 async function start(session) {
   const email = session.user.email.toLowerCase();
+  me = { pending: true }; // blocks a second start from the auth listener while this one runs
   const { data, error } = await db.from("applications").select("id, name, email, rate, created_at").eq("email", email).eq("status", "accepted");
-  if (error) return gate(explain(error));
-  if (!data.length) { await db.auth.signOut(); return gate(`${email} isn't on the outliner team. Use the email you applied with, or wait for your acceptance.`); }
+  if (error) { me = null; return gate(explain(error)); }
+  if (!data.length) { me = null; await db.auth.signOut(); return gate(`${email} isn't on the outliner team. Use the email you applied with, or wait for your acceptance.`); }
+  if (needsPassword(session)) await passwordScreen(root, db, SIDE);
   me = data[0];
   const b = await db.from("batches").select("*").eq("application_id", me.id).order("month", { ascending: false });
   if (b.error) return gate(explain(b.error));
@@ -73,7 +88,7 @@ function render() {
           <td class="small">${b.paid ? `Paid ${day(b.paid_on)}` : b.status === "approved" ? payWindow(b.month).label : ""}</td></tr>`).join("")}
       </tbody></table></div>` : `<div class="empty"><b>No batches yet</b>Your monthly batches and their approvals show up here.</div>`}</section>
   </div>`;
-  $("#signOut").onclick = async () => { await db.auth.signOut(); gate("You're signed out."); };
+  $("#signOut").onclick = async () => { await db.auth.signOut(); me = null; gate("You're signed out."); };
   $("#batchForm").onsubmit = submit;
 }
 

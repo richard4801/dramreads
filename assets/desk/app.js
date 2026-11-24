@@ -1,5 +1,5 @@
 // The desk: sign-in gate, sidebar shell and hash router (#/view/id/sub).
-import { $, $$, esc, connect, loadAll, toast, explain, ICON, initials, closeDrawer, drawer } from "./core.js";
+import { $, $$, esc, connect, loadAll, toast, explain, ICON, initials, closeDrawer, drawer, linkBack, needsPassword, passwordScreen } from "./core.js";
 import { VIEWS, counts } from "./views.js";
 
 const NAV = [
@@ -17,44 +17,48 @@ const root = $("#root");
 const db = connect();
 let me = null;
 
+const SIDE = `<div class="gate-side"><a class="brand" href="home.html">dram<i>reads</i><small>the desk</small></a>
+  <div><blockquote>Every story, every outliner, every deal. One desk.</blockquote><p>Applications, the story board, platform deals and payroll for the dramreads team.</p></div></div>`;
+
 function gate(message = "") {
-  root.innerHTML = `<div class="gate">
-    <div class="gate-side"><a class="brand" href="home.html">dram<i>reads</i><small>the desk</small></a>
-      <div><blockquote>Every story, every outliner, every deal. One desk.</blockquote><p>Applications, the story board, platform deals and payroll for the dramreads team.</p></div></div>
+  root.innerHTML = `<div class="gate">${SIDE}
     <div class="gate-form"><form id="login" novalidate>
       <h1>Sign in</h1>
-      <p class="muted" style="margin:0">We'll email you a one-time sign-in link. Invited partners use the email they were invited with.</p>
       <div class="fld"><label for="lEmail">Email</label><input id="lEmail" type="email" autocomplete="username" required></div>
-      <div class="fld" id="passRow" hidden><label for="lPass">Password</label><input id="lPass" type="password" autocomplete="current-password"></div>
-      <button class="dk-btn" id="linkBtn">Email me a sign-in link</button>
-      <button type="button" class="dk-btn ghost" id="passToggle">Use a password instead</button>
+      <div class="fld"><label for="lPass">Password</label><input id="lPass" type="password" autocomplete="current-password"></div>
+      <button class="dk-btn" id="signBtn">Sign in</button>
+      <button type="button" class="dk-btn ghost" id="linkBtn">First time, or forgot your password?</button>
       <p class="err" id="loginErr" role="status">${esc(message)}</p>
       <p class="muted small">Outliners sign in at the <a href="portal.html">outliner portal</a>.</p>
     </form></div></div>`;
-  const out = $("#loginErr"), pass = $("#lPass");
-  $("#passToggle").onclick = () => { $("#passRow").hidden = false; $("#passToggle").hidden = true; $("#linkBtn").textContent = "Sign in"; pass.focus(); };
+  const out = $("#loginErr"), mail = $("#lEmail"), email = () => mail.value.trim().toLowerCase();
   $("#login").onsubmit = async e => {
     e.preventDefault();
     if (!db) return;
-    const email = $("#lEmail").value.trim().toLowerCase();
-    if (!$("#lEmail").checkValidity() || !email) return out.textContent = "Enter your email.";
-    const btn = $("#linkBtn"); btn.disabled = true;
-    if (!$("#passRow").hidden) {
-      const { data, error } = await db.auth.signInWithPassword({ email, password: pass.value });
-      btn.disabled = false;
-      return error ? (out.textContent = "That email and password don't match a team account.") : start(data.session);
-    }
-    const { error } = await db.auth.signInWithOtp({ email, options: { emailRedirectTo: location.origin + location.pathname } });
+    if (!mail.checkValidity() || !email()) { mail.focus(); return out.textContent = "Enter your email."; }
+    if (!$("#lPass").value) { $("#lPass").focus(); return out.textContent = "Enter your password, or use the link below if you haven't set one yet."; }
+    const btn = $("#signBtn"); btn.disabled = true;
+    const { data, error } = await db.auth.signInWithPassword({ email: email(), password: $("#lPass").value });
     btn.disabled = false;
-    out.textContent = error ? explain(error) : `Check ${email} for your sign-in link. It works once, for an hour.`;
+    error ? (out.textContent = "That email and password don't match. First time here? Use the link below to set your password.") : start(data.session);
   };
-  $("#lEmail").focus();
+  // The emailed link lands on "Create your password", never straight in.
+  $("#linkBtn").onclick = async () => {
+    if (!db) return;
+    if (!mail.checkValidity() || !email()) { mail.focus(); return out.textContent = "Enter your email first, then we'll send the link."; }
+    const btn = $("#linkBtn"); btn.disabled = true;
+    const { error } = await db.auth.signInWithOtp({ email: email(), options: { emailRedirectTo: linkBack() } });
+    btn.disabled = false;
+    out.textContent = error ? explain(error) : `Check ${email()} for a link to set your password. It works once, for an hour.`;
+  };
+  mail.focus();
 }
 
 async function start(session) {
   me = session.user.email.toLowerCase();
   const { data: admin } = await db.from("admins").select("email").eq("email", me);
-  if (!admin?.length) { await db.auth.signOut(); return gate(`${me} isn't on the team. Ask a partner to invite you from the desk's Team page.`); }
+  if (!admin?.length) { me = null; await db.auth.signOut(); return gate(`${session.user.email} isn't on the team. Ask a partner to invite you from the desk's Team page.`); }
+  if (needsPassword(session)) await passwordScreen(root, db, SIDE);
   try { await loadAll(db); } catch (err) { return gate(`Couldn't load the desk: ${explain(err)}`); }
   shell();
   addEventListener("hashchange", route);
