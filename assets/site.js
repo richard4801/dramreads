@@ -365,7 +365,7 @@ if (apply) apply.addEventListener("submit", async e => {
   if (v("aWebsite")) return say("Thanks. Your application is in."); // honeypot: bots fill hidden fields
 
   const cfg = window.DR_SUPABASE;
-  if (!cfg?.url || !window.supabase) return say("This is a preview, so nothing was sent yet. DM us to apply while applications open here.");
+  if (!cfg?.url || !cfg?.anonKey || !window.supabase) return say("This is a preview, so nothing was sent yet. DM us to apply while applications open here.");
   const db = window.supabase.createClient(cfg.url, cfg.anonKey);
   btn.disabled = true; say("Sending your application…");
   try {

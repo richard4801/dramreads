@@ -166,6 +166,7 @@ input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--coral-in
 .todo .what { flex: 1; min-width: 0; display: grid; gap: 1px; }
 .todo .what b { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .todo .what small { color: var(--ink-3); font-size: 12px; }
+.member { display: flex; gap: 12px; align-items: center; padding: 12px 18px; }
 .todo li a > i { font-style: normal; color: var(--ink-3); font-size: 18px; line-height: 1; }
 
 /* ---------- Lists & tables ---------- */

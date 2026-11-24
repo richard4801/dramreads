@@ -462,4 +462,44 @@ function payroll_(el, ctx) {
   });
 }
 
-export const VIEWS = { overview, applications, outliners: outliners_, writers, stories, deals, payroll: payroll_ };
+// ============ Team ============
+// Invitation = add the email to admins, then email them a one-time sign-in link to the desk.
+function team(el, ctx) {
+  const people = [...S.admins].sort((a, b) => (a.email === ctx.me ? -1 : b.email === ctx.me ? 1 : a.added_at.localeCompare(b.added_at)));
+  el.innerHTML = `${head("Team", "Everyone who can sign in to the desk.")}
+    <div class="grid-2">
+      <section class="card"><header><h2>Desk members</h2><span class="count">${people.length}</span></header>
+        <ul class="todo">${people.map(a => `<li><div class="member">${face(a.email.split("@")[0])}<span class="what"><b>${esc(a.email)}</b><small>${a.email === ctx.me ? "You" : `added ${since(a.added_at)}`}</small></span>
+          ${a.email === ctx.me ? "" : `<button type="button" class="dk-btn ghost sm" data-rm="${esc(a.email)}">Remove</button>`}</div></li>`).join("")}</ul></section>
+      <section class="card"><header><h2>Invite a partner</h2></header>
+        <form id="invite" class="dk-form pad" novalidate style="padding-top:16px">
+          <div class="fld full"><label for="invEmail">Their email</label><input id="invEmail" type="email" autocomplete="off" required placeholder="name@example.com"></div>
+          <div class="fld full"><button class="dk-btn" style="justify-self:start">Send invitation</button></div>
+          <p class="small muted" style="grid-column:1/-1;margin:0">They get an email with a one-time sign-in link to the desk. They can see and change everything you can.</p>
+        </form></section>
+    </div>`;
+  $("#invite", el).onsubmit = async e => {
+    e.preventDefault();
+    const input = $("#invEmail", el), email = input.value.trim().toLowerCase();
+    if (!input.checkValidity() || !email) { input.focus(); return toast("Enter a valid email.", true); }
+    if (S.admins.some(a => a.email === email)) return toast(`${email} is already on the team.`, true);
+    const btn = e.target.querySelector("button"); btn.disabled = true;
+    try {
+      const { data, error } = await ctx.db.from("admins").insert({ email }).select().single();
+      if (error) throw error;
+      S.admins.push(data);
+      const link = await ctx.db.auth.signInWithOtp({ email, options: { emailRedirectTo: location.origin + location.pathname } });
+      toast(link.error ? `${email} added. The email didn't send (${link.error.message}); they can request a sign-in link from the desk.` : `Invitation sent to ${email}.`, !!link.error);
+      ctx.rerender();
+    } catch (err) { fail(err); } finally { btn.disabled = false; }
+  };
+  $$("[data-rm]", el).forEach(b => b.onclick = async () => {
+    const email = b.dataset.rm;
+    if (!await confirmBox(`Remove ${email}?`, "They lose access to the desk straight away. You can invite them again later.", "Remove")) return;
+    const { error } = await ctx.db.from("admins").delete().eq("email", email);
+    if (error) return fail(error);
+    S.admins = S.admins.filter(a => a.email !== email); toast(`${email} removed`); ctx.rerender();
+  });
+}
+
+export const VIEWS = { overview, applications, outliners: outliners_, writers, stories, deals, payroll: payroll_, team };

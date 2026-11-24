@@ -64,7 +64,7 @@ function seed() {
     deal(T("Fake It Till Christmas"), dreame, "licence", 1200, "negotiating", 10),
     deal(T("Fake It Till Christmas"), novelsnack, "licence", null, "pitched", 21),
     deal(T("The Clause"), goodnovel, "buyout", 3000, "declined", 90)];
-  return { admins: [{ email: "you@dramreads.test" }], applications, scores, batches, writers, writer_logs, platforms, stories, deals };
+  return { admins: [{ email: "you@dramreads.test", added_at: ago(200) }, { email: "partner@dramreads.test", added_at: ago(190) }], applications, scores, batches, writers, writer_logs, platforms, stories, deals };
 }
 
 export function install(role) {
@@ -96,7 +96,7 @@ export function install(role) {
       if (op === "insert") {
         if (table === "batches" && rows.some(r => r.application_id === payload.application_id && r.month === payload.month)) return { data: null, error: { code: "23505", message: "duplicate" } };
         if (table === "platforms" && rows.some(r => r.name.toLowerCase() === payload.name.toLowerCase())) return { data: null, error: { code: "23505", message: "duplicate" } };
-        const row = { id: uuid(), created_at: new Date().toISOString(), ...(table === "batches" ? { approved: 0, status: "submitted", paid: false, rate: null } : {}), ...(table === "writer_logs" || table === "deals" ? { paid: false } : {}), ...payload };
+        const row = { id: uuid(), created_at: new Date().toISOString(), ...(table === "batches" ? { approved: 0, status: "submitted", paid: false, rate: null } : {}), ...(table === "writer_logs" || table === "deals" ? { paid: false } : {}), ...(table === "admins" ? { added_at: new Date().toISOString() } : {}), ...payload };
         rows.push(row); return out([{ ...row }]);
       }
       const row = { reviewer: "you@dramreads.test", ...payload }, old = rows.find(r => conflict.every(k => r[k] === row[k]));
@@ -125,6 +125,6 @@ export function install(role) {
   note.className = "demo-note";
   note.title = "Tap to hide";
   note.onclick = () => note.remove();
-  note.innerHTML = `Demo with sample data. Nothing you change is saved. ${role === "outliner" ? "Press <b>Email me a sign-in link</b> to enter as Grace." : "Press <b>Sign in</b> with any password."}`;
+  note.innerHTML = `Demo with sample data. Nothing you change is saved. ${role === "outliner" ? "Press <b>Email me a sign-in link</b> to enter as Grace." : "Press <b>Email me a sign-in link</b> to enter."}`;
   document.body.append(note);
 }

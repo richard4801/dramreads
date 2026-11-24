@@ -6,11 +6,12 @@ const NAV = [
   [null, [["overview", "Overview"]]],
   ["People", [["applications", "Applications"], ["outliners", "Outliners"], ["writers", "Writers"]]],
   ["Work", [["stories", "Story board"], ["deals", "Platform deals"], ["payroll", "Payroll"]]],
+  ["Settings", [["team", "Team"]]],
 ];
 const TITLES = Object.fromEntries(NAV.flatMap(([, items]) => items));
 // Phone tab bar, like the public site's: two sections, a raised "New" button, one section, More.
 const TABS = [["overview", "Overview"], ["applications", "Applications"], ["stories", "Stories"]];
-const MORE = ["payroll", "outliners", "writers", "deals"];
+const MORE = ["payroll", "outliners", "writers", "deals", "team"];
 const CREATE = [["#/stories/new", "stories", "New story"], ["#/deals/new", "deals", "New deal"], ["#/writers/log", "writers", "Log chapters"], ["#/writers/new", "outliners", "Add a writer"], ["#/deals/platforms", "deals", "Add a platform"]];
 const root = $("#root");
 const db = connect();
@@ -22,20 +23,30 @@ function gate(message = "") {
       <div><blockquote>Every story, every outliner, every deal. One desk.</blockquote><p>Applications, the story board, platform deals and payroll for the dramreads team.</p></div></div>
     <div class="gate-form"><form id="login" novalidate>
       <h1>Sign in</h1>
+      <p class="muted" style="margin:0">We'll email you a one-time sign-in link. Invited partners use the email they were invited with.</p>
       <div class="fld"><label for="lEmail">Email</label><input id="lEmail" type="email" autocomplete="username" required></div>
-      <div class="fld"><label for="lPass">Password</label><input id="lPass" type="password" autocomplete="current-password" required></div>
-      <button class="dk-btn">Sign in</button>
-      <p class="err" id="loginErr" role="alert">${esc(message)}</p>
+      <div class="fld" id="passRow" hidden><label for="lPass">Password</label><input id="lPass" type="password" autocomplete="current-password"></div>
+      <button class="dk-btn" id="linkBtn">Email me a sign-in link</button>
+      <button type="button" class="dk-btn ghost" id="passToggle">Use a password instead</button>
+      <p class="err" id="loginErr" role="status">${esc(message)}</p>
       <p class="muted small">Outliners sign in at the <a href="portal.html">outliner portal</a>.</p>
     </form></div></div>`;
+  const out = $("#loginErr"), pass = $("#lPass");
+  $("#passToggle").onclick = () => { $("#passRow").hidden = false; $("#passToggle").hidden = true; $("#linkBtn").textContent = "Sign in"; pass.focus(); };
   $("#login").onsubmit = async e => {
     e.preventDefault();
     if (!db) return;
-    const btn = e.target.querySelector("button"); btn.disabled = true;
-    const { data, error } = await db.auth.signInWithPassword({ email: $("#lEmail").value.trim(), password: $("#lPass").value });
+    const email = $("#lEmail").value.trim().toLowerCase();
+    if (!$("#lEmail").checkValidity() || !email) return out.textContent = "Enter your email.";
+    const btn = $("#linkBtn"); btn.disabled = true;
+    if (!$("#passRow").hidden) {
+      const { data, error } = await db.auth.signInWithPassword({ email, password: pass.value });
+      btn.disabled = false;
+      return error ? (out.textContent = "That email and password don't match a team account.") : start(data.session);
+    }
+    const { error } = await db.auth.signInWithOtp({ email, options: { emailRedirectTo: location.origin + location.pathname } });
     btn.disabled = false;
-    if (error) return $("#loginErr").textContent = "That email and password don't match a team account.";
-    start(data.session);
+    out.textContent = error ? explain(error) : `Check ${email} for your sign-in link. It works once, for an hour.`;
   };
   $("#lEmail").focus();
 }
@@ -43,7 +54,7 @@ function gate(message = "") {
 async function start(session) {
   me = session.user.email.toLowerCase();
   const { data: admin } = await db.from("admins").select("email").eq("email", me);
-  if (!admin?.length) { await db.auth.signOut(); return gate(`${me} isn't on the team list. Ask your partner to add it in Supabase.`); }
+  if (!admin?.length) { await db.auth.signOut(); return gate(`${me} isn't on the team. Ask a partner to invite you from the desk's Team page.`); }
   try { await loadAll(db); } catch (err) { return gate(`Couldn't load the desk: ${explain(err)}`); }
   shell();
   addEventListener("hashchange", route);
@@ -106,4 +117,6 @@ if (!db) gate("The desk isn't connected yet. Add your Supabase project to assets
 else {
   const { data } = await db.auth.getSession();
   data.session ? start(data.session) : gate();
+  // Arriving from an emailed link (or the demo) signs in after load.
+  db.auth.onAuthStateChange((ev, session) => { if (ev === "SIGNED_IN" && session && !me) start(session); });
 }

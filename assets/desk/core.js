@@ -11,12 +11,12 @@ export const plural = (n, one, many = one + "s") => `${n} ${n === 1 ? one : many
 // ---------- Connection ----------
 export function connect() {
   const cfg = window.DR_SUPABASE;
-  if (!cfg?.url || !window.supabase) return null;
+  if (!cfg?.url || !cfg?.anonKey || !window.supabase) return null;
   return window.supabase.createClient(cfg.url, cfg.anonKey);
 }
 
 // ---------- Store: every table the signed-in person can see, kept in memory ----------
-export const TABLES = ["applications", "scores", "batches", "writers", "writer_logs", "platforms", "stories", "deals"];
+export const TABLES = ["admins", "applications", "scores", "batches", "writers", "writer_logs", "platforms", "stories", "deals"];
 export const S = Object.fromEntries(TABLES.map(t => [t, []]));
 export const byId = (table, id) => S[table].find(r => r.id === id);
 
@@ -148,6 +148,7 @@ export const ICON = {
   deals: svg('<path d="M3 11l4-4 4 2 3-3 7 7-4 4-3-1-3 3-4-4z"/><path d="M10 13l3 3"/>'),
   payroll: svg('<rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M7 15h3"/>'),
   plus: svg('<path d="M12 5v14M5 12h14"/>'),
+  team: svg('<path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z"/><path d="M9 12l2 2 4-4"/>'),
   x: svg('<path d="M6 6l12 12M18 6L6 18"/>'),
   file: svg('<path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5"/>'),
   out: svg('<path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10"/>'),
