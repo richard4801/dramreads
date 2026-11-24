@@ -63,18 +63,16 @@ function overview(el, ctx) {
       <a href="#/payroll"><b>${whole(next?.owed || 0)}</b><span>Owed next payday</span><small>${next ? `${next.label.replace(/, \d{4}$/, "")} · ${plural(next.lines.filter(l => !l.paid).length, "person", "people")}` : "nothing owed"}</small></a>
     </nav>
     <div class="grid-2">
-      <div class="stack">
-      <section class="card">
-        <header><h2>The shelf</h2><a class="small" href="#/stories">Open story board</a></header>
-        <div class="shelf">${per.map(([k, l, n], i) => `<a class="spine${i >= 3 ? " dark" : ""}" href="#/stories" style="--c: var(--st-${k}); height: ${44 + n / max * 56}%" title="${l}: ${n}"><b>${n}</b><span>${l.split(" ")[0]}</span></a>`).join("")}</div>
-        <p class="shelf-legend"><span>${plural(S.stories.length, "story", "stories")} in all</span><span>${plural(outliners().length, "outliner")} · ${plural(S.writers.filter(w => w.status === "active").length, "active writer")}</span></p>
+      <section class="card"><header><h2>Needs you</h2>${todo.length ? `<span class="count">${todo.length}</span>` : ""}</header>
+        ${todo.length ? `<ul class="todo">${todo.slice(0, 9).map(([href, tag, label, meta]) => `<li><a href="${href}"><span class="tag t-${tag.toLowerCase()}">${tag}</span><span class="what"><b>${esc(label)}</b><small>${esc(meta)}</small></span><i aria-hidden="true">›</i></a></li>`).join("")}</ul>` : empty("All clear", "Nothing is waiting on you right now.")}
       </section>
-      ${leaderboard()}
-      </div>
       <div class="stack">
-        <section class="card"><header><h2>Needs you</h2>${todo.length ? `<span class="count">${todo.length}</span>` : ""}</header>
-          ${todo.length ? `<ul class="todo">${todo.slice(0, 9).map(([href, tag, label, meta]) => `<li><a href="${href}"><span class="tag t-${tag.toLowerCase()}">${tag}</span><span class="what"><b>${esc(label)}</b><small>${esc(meta)}</small></span><i aria-hidden="true">›</i></a></li>`).join("")}</ul>` : empty("All clear", "Nothing is waiting on you right now.")}
+        <section class="card">
+          <header><h2>The shelf</h2><a href="#/stories">Story board</a></header>
+          <div class="shelf">${per.map(([k, l, n], i) => `<a class="spine${i >= 3 ? " dark" : ""}" href="#/stories" style="--c: var(--st-${k}); height: ${44 + n / max * 56}%" title="${l}: ${n}"><b>${n}</b><span>${l.split(" ")[0]}</span></a>`).join("")}</div>
+          <p class="shelf-legend"><span>${plural(S.stories.length, "story", "stories")}</span><span>${plural(outliners().length, "outliner")} · ${plural(S.writers.filter(w => w.status === "active").length, "writer")}</span></p>
         </section>
+        ${leaderboard()}
       </div>
     </div>`;
 }
