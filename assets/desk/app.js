@@ -1,5 +1,5 @@
 // The desk: sign-in gate, sidebar shell and hash router (#/view/id/sub).
-import { $, $$, esc, connect, loadAll, toast, explain, ICON, initials, closeDrawer } from "./core.js";
+import { $, $$, esc, connect, loadAll, toast, explain, ICON, initials, closeDrawer, drawer } from "./core.js";
 import { VIEWS, counts } from "./views.js";
 
 const NAV = [
@@ -8,6 +8,9 @@ const NAV = [
   ["Work", [["stories", "Story board"], ["deals", "Platform deals"], ["payroll", "Payroll"]]],
 ];
 const TITLES = Object.fromEntries(NAV.flatMap(([, items]) => items));
+// Phone tab bar: the four daily sections; the rest live under More.
+const TABS = [["overview", "Overview"], ["applications", "Applications"], ["stories", "Stories"], ["payroll", "Payroll"]];
+const MORE = ["outliners", "writers", "deals"];
 const root = $("#root");
 const db = connect();
 let me = null;
@@ -54,15 +57,22 @@ function shell() {
       <div class="me"><span class="avatar">${esc(initials(me.split("@")[0]))}</span><span>${esc(me)}</span><button type="button" class="dk-icon" id="signOut" aria-label="Sign out" title="Sign out">${ICON.out}</button></div>
     </aside>
     <div class="body">
-      <div class="mobile-bar"><button type="button" class="dk-icon" id="menu" aria-label="Open menu" aria-controls="side" aria-expanded="false">${ICON.menu}</button><a class="brand" href="#/overview">dram<i>reads</i></a><span class="title" id="mTitle"></span></div>
+      <div class="mobile-bar"><a class="brand" href="#/overview">dram<i>reads</i></a><span class="title" id="mTitle"></span><button type="button" class="avatar" id="meBtn" aria-label="Account and more">${esc(initials(me.split("@")[0]))}</button></div>
       <main class="main" id="view" tabindex="-1"></main>
     </div>
+    <nav class="tabbar" aria-label="Desk sections">${TABS.map(([k, l]) => `<a href="#/${k}" data-nav="${k}">${ICON[k]}<span>${l}</span><b data-count="${k}" hidden></b></a>`).join("")}
+      <button type="button" data-nav="more" id="moreBtn">${ICON.menu}<span>More</span><b data-count="more" hidden></b></button></nav>
   </div>`;
-  $("#signOut").onclick = async () => { await db.auth.signOut(); location.hash = ""; location.reload(); };
-  const desk = $("#desk"), menu = $("#menu");
-  const setNav = open => { desk.classList.toggle("nav-open", open); menu.setAttribute("aria-expanded", open); };
-  menu.onclick = () => setNav(!desk.classList.contains("nav-open"));
-  desk.addEventListener("click", e => { if (desk.classList.contains("nav-open") && (e.target === desk || e.target.closest(".side a"))) setNav(false); });
+  const signOut = async () => { await db.auth.signOut(); location.hash = ""; location.reload(); };
+  $("#signOut").onclick = signOut;
+  // Phones: the sections that don't fit the tab bar, plus the account, in a bottom sheet.
+  $("#moreBtn").onclick = $("#meBtn").onclick = () => {
+    const c = counts();
+    drawer({ title: "More", sub: esc(me),
+      body: `<nav class="more-list">${MORE.map(k => `<a href="#/${k}">${ICON[k]}<span>${TITLES[k]}</span>${c[k] ? `<b>${c[k]}</b>` : ""}</a>`).join("")}</nav>
+        <button type="button" class="dk-btn ghost" id="sheetSignOut">${ICON.out} Sign out</button>` });
+    $("#sheetSignOut").onclick = signOut;
+  };
 }
 
 let lastView = null;
@@ -70,8 +80,9 @@ function route() {
   const [name = "overview", id, sub] = location.hash.replace(/^#\/?/, "").split("/");
   const view = VIEWS[name] ? name : "overview";
   $$(".drawer").forEach(d => closeDrawer(d));
-  $$("[data-nav]").forEach(a => a.setAttribute("aria-current", a.dataset.nav === view ? "page" : "false"));
-  Object.entries(counts()).forEach(([k, n]) => { const b = $(`[data-count="${k}"]`); if (b) { b.hidden = !n; b.textContent = n; } });
+  $$("[data-nav]").forEach(a => a.setAttribute("aria-current", a.dataset.nav === view || (a.dataset.nav === "more" && MORE.includes(view)) ? "page" : "false"));
+  const c = counts(); c.more = MORE.reduce((n, k) => n + (c[k] || 0), 0);
+  Object.entries(c).forEach(([k, n]) => $$(`[data-count="${k}"]`).forEach(b => { b.hidden = !n; b.textContent = n; }));
   $("#mTitle").textContent = TITLES[view];
   document.title = `${TITLES[view]} · dramreads desk`;
   const el = $("#view");

@@ -110,18 +110,19 @@ function applications(el, ctx, id) {
   el.innerHTML = `${head("Applications", "Every outliner who applied, with their assessment and both partners' scores.")}
     <div class="toolbar"><div class="seg" role="group" aria-label="Status">${filters.map(([k, l]) => `<button type="button" data-f="${k}" aria-pressed="${k === appFilter}">${l}<b>${k === "all" ? S.applications.length : S.applications.filter(a => a.status === k).length}</b></button>`).join("")}</div>
       <label class="search">${ICON.search}<span class="sr">Search applications</span><input type="search" id="appSearch" value="${esc(appQuery)}" placeholder="Name, email or genre"></label></div>
-    <div class="split"><section class="card"><ul class="list" id="appList">${list()}</ul></section><section class="card detail" id="appDetail"></section></div>`;
+    <div class="split${id ? " detail-open" : ""}"><section class="card list-card"><ul class="list" id="appList">${list()}</ul></section><section class="card detail" id="appDetail"></section></div>`;
   $$("[data-f]", el).forEach(b => b.onclick = () => { appFilter = b.dataset.f; ctx.rerender(); });
   $("#appSearch", el).oninput = e => { appQuery = e.target.value.trim(); $("#appList", el).innerHTML = list(); };
   $("#appList", el).onclick = e => { const b = e.target.closest("[data-open]"); if (b) ctx.go(`#/applications/${b.dataset.open}`); };
   appDetail($("#appDetail", el), ctx, byId("applications", id));
-  if (id && matchMedia("(max-width: 900px)").matches) $("#appDetail", el).scrollIntoView({ block: "start" });
+  if (id && matchMedia("(max-width: 900px)").matches) scrollTo(0, 0); // phones show the detail as its own screen
 }
 
 function appDetail(el, ctx, a) {
   if (!a) { el.innerHTML = empty("Pick an application", "Read the assessment, score it, then accept, reject or ban."); return; }
   const all = S.scores.filter(s => s.application_id === a.id), mine = all.find(s => s.reviewer === ctx.me) || {}, avg = average(all);
   el.innerHTML = `
+    <a class="back" href="#/applications">‹ Applications</a>
     <div class="detail-head">${face(a.name, "lg")}<div class="meta"><h2>${esc(a.name)}</h2><p><a href="mailto:${esc(a.email)}">${esc(a.email)}</a> · applied ${day(a.created_at)}</p></div>
       ${pill(a.status, APP_STATUS[a.status] + (a.status === "accepted" ? ` · ${money(a.rate)}` : ""))}</div>
     ${a.prior_ban ? `<p class="warn">${ICON.flag}This email or name matches an outliner you banned before.</p>` : ""}
@@ -186,7 +187,7 @@ function outliners_(el, ctx, id, sub) {
     <div class="stack">
       <section class="card"><header><h2>Waiting for approval</h2><span class="muted small">${waiting.length || ""}</span></header>
         ${waiting.length ? `<div class="tbl-wrap"><table class="tbl stackable"><thead><tr><th>Outliner</th><th>Month</th><th class="r">Outlines</th><th>Sent</th><th></th></tr></thead><tbody>
-          ${waiting.map(b => `<tr class="click" data-batch="${b.id}"><td><span class="person">${face(nameOf("applications", b.application_id))}<b>${esc(nameOf("applications", b.application_id))}</b></span></td><td>${monthLabel(b.month)}</td><td class="r num">${b.submitted}</td><td class="muted">${day(b.created_at)}</td><td class="r"><button type="button" class="dk-btn sm">Review</button></td></tr>`).join("")}
+          ${waiting.map(b => `<tr class="click" data-batch="${b.id}"><td><span class="person">${face(nameOf("applications", b.application_id))}<b>${esc(nameOf("applications", b.application_id))}</b></span></td><td>${monthLabel(b.month)}</td><td class="r num" data-l="Outlines">${b.submitted}</td><td class="muted" data-l="Sent">${day(b.created_at)}</td><td class="r"><button type="button" class="dk-btn sm">Review</button></td></tr>`).join("")}
           </tbody></table></div>` : `<div class="pad">${empty("No batches waiting", "New batches from the portal land here.")}</div>`}
       </section>
       ${team.length ? `<div class="people">${team.map(o => { const st = outlinerStats(o); return `
@@ -309,7 +310,7 @@ function logChapters(ctx) {
 }
 
 // ============ Story board ============
-let storyLead = "all", storyQuery = "";
+let storyLead = "all", storyQuery = "", storyStage = "outline";
 function stories(el, ctx, id) {
   const shown = S.stories.filter(s => (storyLead === "all" || s.lead === storyLead) && (!storyQuery || `${s.title} ${s.trope}`.toLowerCase().includes(storyQuery.toLowerCase())));
   const card = s => {
@@ -320,13 +321,15 @@ function stories(el, ctx, id) {
       ${s.chapters_target ? `<span class="row"><span>${s.chapters_done} / ${s.chapters_target} chapters</span><span>${pct}%</span></span><span class="bar"><i style="width:${pct}%"></i></span>` : ""}
       <span class="row"><span class="faces">${o ? face(o.name) : ""}${w ? face(w.name, "writer") : ""}</span>${s.due_on && live ? `<span class="due ${d < 0 ? "late" : d <= 7 ? "soon" : ""}">${d < 0 ? `${-d}d late` : d === 0 ? "due today" : `due ${day(s.due_on)}`}</span>` : ""}</span></button>`;
   };
-  el.innerHTML = `${head("Story board", "Drag a story to move it along. Coral spines are female lead, walnut are male lead.", `<a class="dk-btn" href="#/stories/new">${ICON.plus} New story</a>`)}
+  el.innerHTML = `${head("Story board", "Drag or tap a story to move it along. Coral spines are female lead, walnut are male lead.", `<a class="dk-btn" href="#/stories/new">${ICON.plus} New story</a>`)}
     <div class="toolbar"><div class="seg" role="group" aria-label="Lead">${[["all", "All"], ["f", "Female lead"], ["m", "Male lead"]].map(([k, l]) => `<button type="button" data-lead="${k}" aria-pressed="${k === storyLead}">${l}</button>`).join("")}</div>
       <label class="search">${ICON.search}<span class="sr">Search stories</span><input type="search" id="storySearch" value="${esc(storyQuery)}" placeholder="Title or trope"></label></div>
+    <div class="stage-tabs" role="tablist" aria-label="Stage">${STAGES.map(([k, l]) => `<button type="button" role="tab" data-st="${k}" aria-selected="${k === storyStage}" style="--c: var(--st-${k})"><i></i>${l}<b>${shown.filter(s => s.stage === k).length}</b></button>`).join("")}</div>
     <div class="board">${STAGES.map(([k, l]) => { const cs = shown.filter(s => s.stage === k); return `
-      <section class="col" data-stage="${k}" style="--c: var(--st-${k})"><header><i></i>${l}<b>${cs.length}</b></header>
+      <section class="col${k === storyStage ? " on" : ""}" data-stage="${k}" style="--c: var(--st-${k})"><header><i></i>${l}<b>${cs.length}</b></header>
         <div class="cards">${cs.map(card).join("")}</div>${k === "outline" ? `<button type="button" class="add-in-col" data-add>+ Add a story</button>` : ""}</section>`; }).join("")}</div>`;
   $$("[data-lead]", el).forEach(b => b.onclick = () => { storyLead = b.dataset.lead; ctx.rerender(); });
+  $$("[data-st]", el).forEach(b => b.onclick = () => { storyStage = b.dataset.st; ctx.rerender(); });
   $("#storySearch", el).oninput = e => { storyQuery = e.target.value; ctx.rerender(); $("#storySearch").focus(); $("#storySearch").setSelectionRange(99, 99); };
   $("[data-add]", el).onclick = () => ctx.go("#/stories/new");
   $$(".scard", el).forEach(c => {
@@ -378,7 +381,7 @@ function deals(el, ctx, id) {
   const sum = st => S.deals.filter(d => st.includes(d.status)).reduce((n, d) => n + Number(d.value || 0), 0);
   el.innerHTML = `${head("Platform deals", "What you've pitched, to whom, and what it's worth.",
     `<a class="dk-btn ghost" href="#/deals/platforms">Platforms</a><a class="dk-btn" href="#/deals/new">${ICON.plus} New deal</a>`)}
-    <nav class="ledger" style="grid-template-columns:repeat(3,1fr)" aria-label="Deal totals">
+    <nav class="ledger three" aria-label="Deal totals">
       <a href="#/deals" data-df="signed"><b>${money(sum(["signed"])).replace(".00", "")}</b><span>Signed</span><small>${plural(S.deals.filter(d => d.status === "signed").length, "deal")}</small></a>
       <a href="#/deals" data-df="negotiating"><b>${money(sum(["pitched", "negotiating"])).replace(".00", "")}</b><span>In talks</span><small>${plural(S.deals.filter(d => ["pitched", "negotiating"].includes(d.status)).length, "deal")}</small></a>
       <a href="#/deals/platforms"><b>${S.platforms.length}</b><span>Platforms</span><small>${S.platforms.slice(0, 3).map(p => esc(p.name)).join(", ") || "add your first"}</small></a>
@@ -439,7 +442,7 @@ function payroll_(el, ctx) {
   const upcoming = windows.filter(w => w.owed > 0).reverse(), cleared = windows.filter(w => w.owed === 0);
   const win = w => `<section class="card paywin${w.owed ? "" : " cleared"}"><header><h2>${w.label}</h2><div class="sum">${w.owed ? `<span>owed</span><b>${money(w.owed)}</b>` : ""}<span>paid ${money(w.paid)}</span>
       ${w.owed ? `<button type="button" class="dk-btn sm" data-all="${w.key}">Mark all paid</button>` : pill("paid", "Cleared")}</div></header>
-    <div class="tbl-wrap"><table class="tbl stackable"><tbody>${w.lines.map(l => `<tr><td><span class="person">${face(l.who, l.kind === "writer" ? "writer" : "")}<span><b>${esc(l.who)}</b><small>${l.kind === "writer" ? "Writer" : "Outliner"} · ${monthLabel(l.month)}</small></span></span></td>
+    <div class="tbl-wrap"><table class="tbl stackable payrows"><tbody>${w.lines.map(l => `<tr><td><span class="person">${face(l.who, l.kind === "writer" ? "writer" : "")}<span><b>${esc(l.who)}</b><small>${l.kind === "writer" ? "Writer" : "Outliner"} · ${monthLabel(l.month)}</small></span></span></td>
       <td class="muted">${esc(l.detail)}</td><td class="r money">${money(l.amount)}</td>
       <td class="r"><label class="pill ${l.paid ? "paid" : "owed"} plain" style="cursor:pointer"><input type="checkbox" data-pay="${l.table}:${l.id}"${l.paid ? " checked" : ""} style="width:15px;height:15px"> ${l.paid ? "Paid" : "Mark paid"}</label></td></tr>`).join("")}</tbody></table></div></section>`;
   el.innerHTML = `${head("Payroll", `Work from each month is paid on the 25th to 30th of the next. ${owed ? `<b>${money(owed)}</b> owed in all.` : "Nothing owed right now."}`)}

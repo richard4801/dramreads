@@ -68,7 +68,7 @@ function render() {
       </form></section>
     <section class="card"><header><h2>Your batches</h2><span class="muted small">${plural(batches.length, "batch", "batches")}</span></header>
       ${batches.length ? `<div class="tbl-wrap"><table class="tbl stackable"><thead><tr><th>Month</th><th class="r">Sent</th><th class="r">Approved</th><th>Status</th><th class="r">Pay</th><th>Paid on</th></tr></thead><tbody>
-        ${batches.map(b => `<tr><td><b>${monthLabel(b.month)}</b>${b.team_note ? `<br><span class="small muted">Editor: “${esc(b.team_note)}”</span>` : ""}</td><td class="r num">${b.submitted}</td><td class="r num">${b.status === "approved" ? b.approved : "–"}</td>
+        ${batches.map(b => `<tr><td><b>${monthLabel(b.month)}</b>${b.team_note ? `<br><span class="small muted">Editor: “${esc(b.team_note)}”</span>` : ""}</td><td class="r num" data-l="Sent">${b.submitted}</td><td class="r num" data-l="Approved">${b.status === "approved" ? b.approved : "–"}</td>
           <td><span class="pill ${b.status}">${STATUS[b.status]}</span></td><td class="r money">${b.status === "approved" ? money(payout(b.approved, b.rate)) : "–"}</td>
           <td class="small">${b.paid ? `Paid ${day(b.paid_on)}` : b.status === "approved" ? payWindow(b.month).label : ""}</td></tr>`).join("")}
       </tbody></table></div>` : `<div class="empty"><b>No batches yet</b>Your monthly batches and their approvals show up here.</div>`}</section>

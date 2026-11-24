@@ -123,6 +123,8 @@ export function install(role) {
 
   const note = document.createElement("p");
   note.className = "demo-note";
+  note.title = "Tap to hide";
+  note.onclick = () => note.remove();
   note.innerHTML = `Demo with sample data. Nothing you change is saved. ${role === "outliner" ? "Press <b>Email me a sign-in link</b> to enter as Grace." : "Press <b>Sign in</b> with any password."}`;
   document.body.append(note);
 }
