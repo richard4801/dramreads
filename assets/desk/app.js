@@ -8,9 +8,10 @@ const NAV = [
   ["Work", [["stories", "Story board"], ["deals", "Platform deals"], ["payroll", "Payroll"]]],
 ];
 const TITLES = Object.fromEntries(NAV.flatMap(([, items]) => items));
-// Phone tab bar: the four daily sections; the rest live under More.
-const TABS = [["overview", "Overview"], ["applications", "Applications"], ["stories", "Stories"], ["payroll", "Payroll"]];
-const MORE = ["outliners", "writers", "deals"];
+// Phone tab bar, like the public site's: two sections, a raised "New" button, one section, More.
+const TABS = [["overview", "Overview"], ["applications", "Applications"], ["stories", "Stories"]];
+const MORE = ["payroll", "outliners", "writers", "deals"];
+const CREATE = [["#/stories/new", "stories", "New story"], ["#/deals/new", "deals", "New deal"], ["#/writers/log", "writers", "Log chapters"], ["#/writers/new", "outliners", "Add a writer"], ["#/deals/platforms", "deals", "Add a platform"]];
 const root = $("#root");
 const db = connect();
 let me = null;
@@ -60,8 +61,10 @@ function shell() {
       <div class="mobile-bar"><a class="brand" href="#/overview">dram<i>reads</i></a><span class="title" id="mTitle"></span><button type="button" class="avatar" id="meBtn" aria-label="Account and more">${esc(initials(me.split("@")[0]))}</button></div>
       <main class="main" id="view" tabindex="-1"></main>
     </div>
-    <nav class="tabbar" aria-label="Desk sections">${TABS.map(([k, l]) => `<a href="#/${k}" data-nav="${k}">${ICON[k]}<span>${l}</span><b data-count="${k}" hidden></b></a>`).join("")}
-      <button type="button" data-nav="more" id="moreBtn">${ICON.menu}<span>More</span><b data-count="more" hidden></b></button></nav>
+    <nav class="tabbar" aria-label="Desk sections">${TABS.slice(0, 2).map(tab).join("")}
+      <button type="button" class="fab" id="newBtn" aria-label="Create something new"><span class="ic">${ICON.plus}</span>New</button>
+      ${TABS.slice(2).map(tab).join("")}
+      <button type="button" data-nav="more" id="moreBtn"><span class="ic">${ICON.menu}</span>More<b data-count="more" hidden></b></button></nav>
   </div>`;
   const signOut = async () => { await db.auth.signOut(); location.hash = ""; location.reload(); };
   $("#signOut").onclick = signOut;
@@ -73,7 +76,10 @@ function shell() {
         <button type="button" class="dk-btn ghost" id="sheetSignOut">${ICON.out} Sign out</button>` });
     $("#sheetSignOut").onclick = signOut;
   };
+  $("#newBtn").onclick = () => drawer({ title: "Create", sub: "Add something to the desk.",
+    body: `<nav class="more-list">${CREATE.map(([href, icon, label]) => `<a href="${href}">${ICON[icon]}<span>${label}</span></a>`).join("")}</nav>` });
 }
+const tab = ([k, l]) => `<a href="#/${k}" data-nav="${k}"><span class="ic">${ICON[k]}</span>${l}<b data-count="${k}" hidden></b></a>`;
 
 let lastView = null;
 function route() {
